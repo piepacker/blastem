@@ -50,7 +50,7 @@ jobs:
         with:
           submodules: true
 
-      - run: make -C libretro platform=unix-armv7-neon-hardfloat -j4
+      - run: make -f Makefile.libretro platform=unix-armv7-neon-hardfloat -j4
 
       - name: ZIP Release
         uses: papeloto/action-zip@v1
