@@ -3,10 +3,10 @@
 
 #include <stdint.h>
 #include "m68k_core.h"
-#ifdef NEW_CORE
-#include "z80.h"
-#else
+#ifndef NEW_CORE
 #include "z80_to_x86.h"
+#else
+#include "z80.h"
 #endif
 
 typedef struct disp_def {

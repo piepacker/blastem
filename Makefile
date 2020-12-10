@@ -187,7 +187,8 @@ M68KOBJS=68kinst.o
 
 ifdef NEW_CORE
 Z80OBJS=z80.o z80inst.o 
-M68KOBJS+= m68k.o
+#M68KOBJS+= m68k.o
+M68KOBJS+= m68k_core.o musashi/m68kops.o musashi/m68kcpu.o
 CFLAGS+= -DNEW_CORE
 else
 Z80OBJS=z80inst.o z80_to_x86.o

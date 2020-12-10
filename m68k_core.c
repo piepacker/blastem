@@ -4,19 +4,26 @@
  BlastEm is free software distributed under the terms of the GNU General Public License version 3 or greater. See COPYING for full license text.
 */
 #include "m68k_core.h"
+#ifndef NEW_CORE
 #include "m68k_internal.h"
+#endif
 #include "68kinst.h"
 #include "backend.h"
+#ifndef NEW_CORE
 #include "gen.h"
+#endif
 #include "util.h"
 #include "serialize.h"
+#ifdef NEW_CORE
+#include "musashi/m68kcpu.h"
+#endif
 #include <stdio.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
 
 char disasm_buf[1024];
-
+#ifndef NEW_CORE
 int8_t native_reg(m68k_op_info * op, m68k_options * opts)
 {
 	if (op->addr_mode == MODE_REG) {
@@ -43,7 +50,7 @@ size_t reg_offset(m68k_op_info *op)
 {
 	return op->addr_mode == MODE_REG ? dreg_offset(op->params.regs.pri) : areg_offset(op->params.regs.pri);
 }
-
+#endif
 void m68k_print_regs(m68k_context * context)
 {
 	printf("XNZVC\n%d%d%d%d%d\n", context->flags[0], context->flags[1], context->flags[2], context->flags[3], context->flags[4]);
@@ -54,7 +61,7 @@ void m68k_print_regs(m68k_context * context)
 		printf("a%d: %X\n", i, context->aregs[i]);
 	}
 }
-
+#ifndef NEW_CORE
 void m68k_read_size(m68k_options *opts, uint8_t size)
 {
 	switch (size)
@@ -763,6 +770,7 @@ static uint8_t get_native_inst_size(m68k_options * opts, uint32_t address)
 	uint32_t slot = meta_off/1024;
 	return opts->gen.ram_inst_sizes[slot][(meta_off/2)%512];
 }
+#endif
 
 uint8_t m68k_is_terminal(m68kinst * inst)
 {
@@ -771,6 +779,7 @@ uint8_t m68k_is_terminal(m68kinst * inst)
 		|| (inst->op == M68K_BCC && inst->extra.cond == COND_TRUE);
 }
 
+#ifndef NEW_CORE
 static void m68k_handle_deferred(m68k_context * context)
 {
 	m68k_options * opts = context->options;
@@ -779,9 +788,11 @@ static void m68k_handle_deferred(m68k_context * context)
 		translate_m68k_stream(opts->gen.deferred->address, context);
 	}
 }
+#endif
 
 uint16_t m68k_get_ir(m68k_context *context)
 {
+#ifndef NEW_CORE
 	uint32_t inst_addr = get_instruction_start(context->options, context->last_prefetch_address-2);
 	uint16_t *native_addr = get_native_pointer(inst_addr, (void **)context->mem_pointers, &context->options->gen);
 	if (native_addr) {
@@ -789,6 +800,9 @@ uint16_t m68k_get_ir(m68k_context *context)
 	}
 	fprintf(stderr, "M68K: Failed to calculate value of IR. Last prefetch address: %X\n", context->last_prefetch_address);
 	return 0xFFFF;
+#else
+	return ((m68000_base_device *)context)->ir;
+#endif
 }
 
 static m68k_debug_handler find_breakpoint(m68k_context *context, uint32_t address)
@@ -816,7 +830,9 @@ void insert_breakpoint(m68k_context * context, uint32_t address, m68k_debug_hand
 			.handler = bp_handler,
 			.address = address
 		};
+#ifndef NEW_CORE
 		m68k_breakpoint_patch(context, address, bp_handler, NULL);
+#endif
 	}
 }
 
@@ -834,6 +850,7 @@ m68k_context *m68k_bp_dispatcher(m68k_context *context, uint32_t address)
 	return context;
 }
 
+#ifndef NEW_CORE
 typedef enum {
 	RAW_FUNC = 1,
 	BINARY_ARITH,
@@ -1144,6 +1161,7 @@ code_ptr get_native_address_trans(m68k_context * context, uint32_t address)
 	}
 	return ret;
 }
+#endif
 
 void remove_breakpoint(m68k_context * context, uint32_t address)
 {
@@ -1157,6 +1175,7 @@ void remove_breakpoint(m68k_context * context, uint32_t address)
 			break;
 		}
 	}
+#ifndef NEW_CORE
 	code_ptr native = get_native_address(context->options, address);
 	if (!native) {
 		return;
@@ -1166,42 +1185,59 @@ void remove_breakpoint(m68k_context * context, uint32_t address)
 	context->options->gen.code.last = native + MAX_NATIVE_SIZE;
 	check_cycles_int(&context->options->gen, address);
 	context->options->gen.code = tmp;
+#endif
 }
 
+m68k_context * sync_components(m68k_context * context, uint32_t address);
 void start_68k_context(m68k_context * context, uint32_t address)
 {
-	code_ptr addr = get_native_address_trans(context, address);
 	m68k_options * options = context->options;
+#ifndef NEW_CORE
+	code_ptr addr = get_native_address_trans(context, address);
 	options->start_context(addr, context);
+#else
+	while (!context->should_return) {
+		if (context->current_cycle >= context->target_cycle) {
+			context->target_cycle += 4 * options->gen.clock_divider;
+		}
+		m68k_cpu_execute((m68000_base_device *)context);
+		if (!context->should_return) {
+			sync_components(context, 0);
+		}
+	}
+#endif
 }
 
 void resume_68k(m68k_context *context)
 {
+	context->should_return = 0;
+#ifndef NEW_CORE
 	code_ptr addr = context->resume_pc;
 	context->resume_pc = NULL;
 	m68k_options * options = context->options;
-	context->should_return = 0;
 	options->start_context(addr, context);
+#else
+	start_68k_context(context, 0);
+#endif
 }
 
 void m68k_reset(m68k_context * context)
 {
+#ifndef NEW_CORE
 	//TODO: Actually execute the M68K reset vector rather than simulating some of its behavior
 	uint16_t *reset_vec = get_native_pointer(0, (void **)context->mem_pointers, &context->options->gen);
-	if (!(context->status & 0x20)) {
-		//switching from user to system mode so swap stack pointers
-		context->aregs[8] = context->aregs[7];
-	}
-	context->status = 0x27;
 	context->aregs[7] = reset_vec[0] << 16 | reset_vec[1];
 	uint32_t address = reset_vec[2] << 16 | reset_vec[3];
-	//interrupt mask may have changed so force a sync
-	sync_components(context, address);
+#else
+	m68k_reset_cpu((m68000_base_device *)context);
+	uint32_t address = 0;
+#endif
 	start_68k_context(context, address);
 }
 
 void m68k_options_free(m68k_options *opts)
 {
+#ifndef NEW_CORE
 	for (uint32_t address = 0; address < opts->gen.address_mask; address += NATIVE_CHUNK_SIZE)
 	{
 		uint32_t chunk = address / NATIVE_CHUNK_SIZE;
@@ -1217,15 +1253,39 @@ void m68k_options_free(m68k_options *opts)
 	}
 	free(opts->gen.ram_inst_sizes);
 	free(opts->big_movem);
+#endif
 	free(opts);
 }
 
+#ifdef NEW_CORE
+void init_m68k_opts(m68k_options * opts, memmap_chunk * memmap, uint32_t num_chunks, uint32_t clock_divider)
+{
+	memset(opts, 0, sizeof(*opts));
+	opts->gen.memmap = memmap;
+	opts->gen.memmap_chunks = num_chunks;
+	opts->gen.address_mask = 0xFFFFFF;
+	opts->gen.byte_swap = 1;
+	opts->gen.max_address = 0x1000000;
+	opts->gen.bus_cycles = 4;
+	opts->gen.clock_divider = clock_divider;
+}
+#endif
 
 m68k_context * init_68k_context(m68k_options * opts, m68k_reset_handler reset_handler)
 {
+#ifndef NEW_CORE
 	m68k_context * context = calloc(1, sizeof(m68k_context) + ram_size(&opts->gen) / (1 << opts->gen.ram_flags_shift) / 8);
 	context->options = opts;
+#else
+	m68000_base_device *device = malloc(sizeof(m68000_base_device));;
+	memset(device, 0, sizeof(m68000_base_device));
+	m68k_context *context = &device->c;
+	context->options = opts;
+	m68k_init_cpu_m68000(device);
+	
+#endif
 	context->int_cycle = CYCLE_NEVER;
+	context->int_pending = 255;
 	context->status = 0x27;
 	context->reset_handler = (code_ptr)reset_handler;
 	return context;
@@ -1241,6 +1301,7 @@ void m68k_serialize(m68k_context *context, uint32_t pc, serialize_buffer *buf)
 	{
 		save_int32(buf, context->aregs[i]);
 	}
+#ifndef NEW_CORE
 	save_int32(buf, pc);
 	uint16_t sr = context->status << 3;
 	for (int flag = 4; flag >= 0; flag--) {
@@ -1248,6 +1309,11 @@ void m68k_serialize(m68k_context *context, uint32_t pc, serialize_buffer *buf)
 		sr |= context->flags[flag] != 0;
 	}
 	save_int16(buf, sr);
+#else
+	m68000_base_device *device = (m68000_base_device *)context;
+	save_int32(buf, device->pc);
+	save_int16(buf, m68ki_get_sr(device));
+#endif
 	save_int32(buf, context->current_cycle);
 	save_int32(buf, context->int_cycle);
 	save_int8(buf, context->int_num);
@@ -1266,6 +1332,7 @@ void m68k_deserialize(deserialize_buffer *buf, void *vcontext)
 	{
 		context->aregs[i] = load_int32(buf);
 	}
+#ifndef NEW_CORE
 	//hack until both PC and IR registers are represented properly
 	context->last_prefetch_address = load_int32(buf);
 	uint16_t sr = load_int16(buf);
@@ -1275,9 +1342,40 @@ void m68k_deserialize(deserialize_buffer *buf, void *vcontext)
 		context->flags[flag] = sr & 1;
 		sr >>= 1;
 	}
+#else
+	m68000_base_device *device = vcontext;
+	device->pc = load_int32(buf);
+	m68ki_set_sr_noint_nosp(device, load_int16(buf));
+#endif
 	context->current_cycle = load_int32(buf);
 	context->int_cycle = load_int32(buf);
 	context->int_num = load_int8(buf);
 	context->int_pending = load_int8(buf);
 	context->trace_pending = load_int8(buf);
 }
+
+#ifdef NEW_CORE
+void m68k_invalidate_code_range(m68k_context *context, uint32_t start, uint32_t end)
+{
+	m68000_base_device *device = (m68000_base_device *)context;
+	for(uint32_t address = start; address < end; address += 0x10000)
+	{
+		device->read_pointers[address >> 16] = NULL;
+		device->write_pointers[address >> 16] = NULL;
+		memmap_chunk const *chunk = find_map_chunk(address, &context->options->gen, 0, NULL);
+		if (!chunk || chunk->end < (address + 64*1024) || (chunk->flags & (MMAP_ONLY_ODD | MMAP_ONLY_EVEN)) || !chunk->buffer) {
+			continue;
+		}
+		void *ptr = get_native_pointer(address, (void **)context->mem_pointers, &context->options->gen);
+		if (!ptr) {
+			continue;
+		}
+		if (chunk->flags & MMAP_READ) {
+			device->read_pointers[address >> 16] = ptr;
+		}
+		if (chunk->flags & MMAP_WRITE) {
+			device->write_pointers[address >> 16] = ptr;
+		}
+	}
+}
+#endif
