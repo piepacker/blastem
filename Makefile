@@ -187,7 +187,6 @@ M68KOBJS=68kinst.o
 
 ifdef NEW_CORE
 Z80OBJS=z80.o z80inst.o 
-#M68KOBJS+= m68k.o
 M68KOBJS+= m68k_core.o musashi/m68kops.o musashi/m68kcpu.o
 CFLAGS+= -DNEW_CORE
 else
@@ -358,7 +357,9 @@ m68k.c : m68k.cpu cpu_dsl.py
 %.o : %.S
 	$(CC) -c -o $@ $<
 
-%.o : %.c
+# There are target (%.c and m68k.c) that will generate CPUs code + include
+# z80.c/m68k.c will trigger the generation of the include that might be included by others C files
+%.o : %.c z80.c m68k.c
 	$(CC) $(CFLAGS) -c -o $@ $<
   
 %.o : %.m
