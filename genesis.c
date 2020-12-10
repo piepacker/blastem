@@ -45,6 +45,7 @@ uint32_t MCLKS_PER_68K;
 #define Z80_CYCLE cycles
 #define Z80_OPTS opts
 #define z80_handle_code_write(...)
+#include "musashi/m68kcpu.h"
 #else
 #define Z80_CYCLE current_cycle
 #define Z80_OPTS options
@@ -204,8 +205,10 @@ static void deserialize(system_header *sys, uint8_t *data, size_t size)
 	deserialize_buffer buffer;
 	init_deserialize(&buffer, data, size);
 	genesis_deserialize(&buffer, gen);
+#ifndef NEW_CORE
 	//HACK: Fix this once PC/IR is represented in a better way in 68K core
 	gen->m68k->resume_pc = get_native_address_trans(gen->m68k, gen->m68k->last_prefetch_address);
+#endif
 }
 
 uint16_t read_dma_value(uint32_t address)
@@ -223,7 +226,12 @@ uint16_t read_dma_value(uint32_t address)
 static uint16_t get_open_bus_value(system_header *system)
 {
 	genesis_context *genesis = (genesis_context *)system;
+#ifndef NEW_CORE
 	return read_dma_value(genesis->m68k->last_prefetch_address/2);
+#else
+	m68000_base_device *device = (m68000_base_device *)genesis->m68k;
+	return read_dma_value(device->pref_addr/2);
+#endif
 }
 
 static void adjust_int_cycle(m68k_context * context, vdp_context * v_context)
@@ -367,12 +375,14 @@ m68k_context * sync_components(m68k_context * context, uint32_t address)
 	vdp_context * v_context = gen->vdp;
 	z80_context * z_context = gen->z80;
 #ifdef REFRESH_EMULATION
+	if (context->current_cycle != last_sync_cycle) {
 	//lame estimation of refresh cycle delay
 	refresh_counter += context->current_cycle - last_sync_cycle;
 	if (!gen->bus_busy) {
 		context->current_cycle += REFRESH_DELAY * MCLKS_PER_68K * (refresh_counter / (MCLKS_PER_68K * REFRESH_INTERVAL));
 	}
 	refresh_counter = refresh_counter % (MCLKS_PER_68K * REFRESH_INTERVAL);
+	}
 #endif
 
 	uint32_t mclks = context->current_cycle;
@@ -438,10 +448,12 @@ m68k_context * sync_components(m68k_context * context, uint32_t address)
 		context->target_cycle = gen->reset_cycle;
 	}
 	if (address) {
+#ifndef NEW_CORE
 		if (gen->header.enter_debugger) {
 			gen->header.enter_debugger = 0;
 			debugger(context, address);
 		}
+#endif
 #ifdef NEW_CORE
 		if (gen->header.save_state) {
 #else
@@ -459,7 +471,9 @@ m68k_context * sync_components(m68k_context * context, uint32_t address)
 			}
 #endif
 			char *save_path = slot >= SERIALIZE_SLOT ? NULL : get_slot_name(&gen->header, slot, use_native_states ? "state" : "gst");
+#ifndef NEW_CORE
 			if (use_native_states || slot >= SERIALIZE_SLOT) {
+#endif
 				serialize_buffer state;
 				init_serialize(&state);
 				genesis_serialize(gen, &state, address, slot != EVENTLOG_SLOT);
@@ -474,9 +488,11 @@ m68k_context * sync_components(m68k_context * context, uint32_t address)
 					save_to_file(&state, save_path);
 					free(state.data);
 				}
+#ifndef NEW_CORE
 			} else {
 				save_gst(gen, save_path, address);
 			}
+#endif
 			if (slot != SERIALIZE_SLOT) {
 				debug_message("Saved state to %s\n", save_path);
 			}
@@ -500,10 +516,12 @@ static m68k_context * vdp_port_write(uint32_t vdp_port, m68k_context * context, 
 	//printf("vdp_port write: %X, value: %X, cycle: %d\n", vdp_port, value, context->current_cycle);
 #ifdef REFRESH_EMULATION
 	//do refresh check here so we can avoid adding a penalty for a refresh that happens during a VDP access
+	if (context->current_cycle - 4*MCLKS_PER_68K > last_sync_cycle) {
 	refresh_counter += context->current_cycle - 4*MCLKS_PER_68K - last_sync_cycle;
 	context->current_cycle += REFRESH_DELAY * MCLKS_PER_68K * (refresh_counter / (MCLKS_PER_68K * REFRESH_INTERVAL));
 	refresh_counter = refresh_counter % (MCLKS_PER_68K * REFRESH_INTERVAL);
 	last_sync_cycle = context->current_cycle;
+	}
 #endif
 	sync_components(context, 0);
 	genesis_context * gen = context->system;
@@ -583,7 +601,7 @@ static m68k_context * vdp_port_write(uint32_t vdp_port, m68k_context * context, 
 		vdp_test_port_write(gen->vdp, value);
 	}
 #ifdef REFRESH_EMULATION
-	last_sync_cycle -= 4;
+	last_sync_cycle -= 4 * MCLKS_PER_68K;
 	//refresh may have happened while we were waiting on the VDP,
 	//so advance refresh_counter but don't add any delays
 	if (vdp_port >= 4 && vdp_port < 8 && v_context->cycles != before_cycle) {
@@ -638,33 +656,24 @@ static uint16_t vdp_port_read(uint32_t vdp_port, m68k_context * context)
 	vdp_port &= 0x1F;
 	uint16_t value;
 #ifdef REFRESH_EMULATION
+	if (context->current_cycle - 4*MCLKS_PER_68K > last_sync_cycle) {
 	//do refresh check here so we can avoid adding a penalty for a refresh that happens during a VDP access
 	refresh_counter += context->current_cycle - 4*MCLKS_PER_68K - last_sync_cycle;
 	context->current_cycle += REFRESH_DELAY * MCLKS_PER_68K * (refresh_counter / (MCLKS_PER_68K * REFRESH_INTERVAL));
 	refresh_counter = refresh_counter % (MCLKS_PER_68K * REFRESH_INTERVAL);
 	last_sync_cycle = context->current_cycle;
+	}
 #endif
+	sync_components(context, 0);
 	genesis_context *gen = context->system;
 	vdp_context * v_context = gen->vdp;
+	uint32_t before_cycle = v_context->cycles;
 	if (vdp_port < 0x10) {
 		if (vdp_port < 4) {
-			sync_components(context, 0);
-			uint32_t before_cycle = v_context->cycles;
 			value = vdp_data_port_read(v_context);
-			if (v_context->cycles != before_cycle) {
-				//printf("68K paused for %d (%d) cycles at cycle %d (%d) for read\n", v_context->cycles - context->current_cycle, v_context->cycles - before_cycle, context->current_cycle, before_cycle);
-				context->current_cycle = v_context->cycles;
-				//Lock the Z80 out of the bus until the VDP access is complete
-				genesis_context *gen = context->system;
-				gen->bus_busy = 1;
-				sync_z80(gen->z80, v_context->cycles);
-				gen->bus_busy = 0;
-			}
 		} else if(vdp_port < 8) {
-			vdp_run_context(v_context, context->current_cycle);
 			value = vdp_control_port_read(v_context);
 		} else {
-			vdp_run_context(v_context, context->current_cycle);
 			value = vdp_hv_counter_read(v_context);
 			//printf("HV Counter: %X at cycle %d\n", value, v_context->cycles);
 		}
@@ -673,8 +682,17 @@ static uint16_t vdp_port_read(uint32_t vdp_port, m68k_context * context)
 	} else {
 		value = get_open_bus_value(&gen->header);
 	}
+	if (v_context->cycles != before_cycle) {
+		//printf("68K paused for %d (%d) cycles at cycle %d (%d) for read\n", v_context->cycles - context->current_cycle, v_context->cycles - before_cycle, context->current_cycle, before_cycle);
+		context->current_cycle = v_context->cycles;
+		//Lock the Z80 out of the bus until the VDP access is complete
+		genesis_context *gen = context->system;
+		gen->bus_busy = 1;
+		sync_z80(gen->z80, v_context->cycles);
+		gen->bus_busy = 0;
+	}
 #ifdef REFRESH_EMULATION
-	last_sync_cycle -= 4;
+	last_sync_cycle -= 4 * MCLKS_PER_68K;
 	//refresh may have happened while we were waiting on the VDP,
 	//so advance refresh_counter but don't add any delays
 	refresh_counter += (context->current_cycle - last_sync_cycle);
@@ -735,6 +753,13 @@ static uint32_t zram_counter = 0;
 static m68k_context * io_write(uint32_t location, m68k_context * context, uint8_t value)
 {
 	genesis_context * gen = context->system;
+#ifdef REFRESH_EMULATION
+	//do refresh check here so we can avoid adding a penalty for a refresh that happens during an IO area access
+	refresh_counter += context->current_cycle - 4*MCLKS_PER_68K - last_sync_cycle;
+	context->current_cycle += REFRESH_DELAY * MCLKS_PER_68K * (refresh_counter / (MCLKS_PER_68K * REFRESH_INTERVAL));
+	refresh_counter = refresh_counter % (MCLKS_PER_68K * REFRESH_INTERVAL);
+	last_sync_cycle = context->current_cycle - 4*MCLKS_PER_68K;
+#endif
 	if (location < 0x10000) {
 		//Access to Z80 memory incurs a one 68K cycle wait state
 		context->current_cycle += MCLKS_PER_68K;
@@ -859,6 +884,11 @@ static m68k_context * io_write(uint32_t location, m68k_context * context, uint8_
 			}
 		}
 	}
+#ifdef REFRESH_EMULATION
+	//no refresh delays during IO access
+	refresh_counter += context->current_cycle - last_sync_cycle;
+	refresh_counter = refresh_counter % (MCLKS_PER_68K * REFRESH_INTERVAL);
+#endif
 	return context;
 }
 
@@ -882,6 +912,13 @@ static uint8_t io_read(uint32_t location, m68k_context * context)
 {
 	uint8_t value;
 	genesis_context *gen = context->system;
+#ifdef REFRESH_EMULATION
+	//do refresh check here so we can avoid adding a penalty for a refresh that happens during an IO area access
+	refresh_counter += context->current_cycle - 4*MCLKS_PER_68K - last_sync_cycle;
+	context->current_cycle += REFRESH_DELAY * MCLKS_PER_68K * (refresh_counter / (MCLKS_PER_68K * REFRESH_INTERVAL));
+	refresh_counter = refresh_counter % (MCLKS_PER_68K * REFRESH_INTERVAL);
+	last_sync_cycle = context->current_cycle - 4*MCLKS_PER_68K;
+#endif
 	if (location < 0x10000) {
 		//Access to Z80 memory incurs a one 68K cycle wait state
 		context->current_cycle += MCLKS_PER_68K;
@@ -977,6 +1014,11 @@ static uint8_t io_read(uint32_t location, m68k_context * context)
 			}
 		}
 	}
+#ifdef REFRESH_EMULATION
+	//no refresh delays during IO access
+	refresh_counter += context->current_cycle - last_sync_cycle;
+	refresh_counter = refresh_counter % (MCLKS_PER_68K * REFRESH_INTERVAL);
+#endif
 	return value;
 }
 
@@ -1209,7 +1251,7 @@ static uint8_t load_state(system_header *system, uint8_t slot)
 	char *statepath = get_slot_name(system, slot, "state");
 	deserialize_buffer state;
 	uint32_t pc = 0;
-	uint8_t ret;
+	uint8_t ret = 0;
 	if (!gen->m68k->resume_pc) {
 		system->delayed_load_slot = slot + 1;
 		gen->m68k->should_return = 1;
@@ -1223,17 +1265,23 @@ static uint8_t load_state(system_header *system, uint8_t slot)
 	if (load_from_file(&state, statepath)) {
 		genesis_deserialize(&state, gen);
 		free(state.data);
+#ifndef NEW_CORE
 		//HACK
 		pc = gen->m68k->last_prefetch_address;
+#endif
 		ret = 1;
 	} else {
+#ifndef NEW_CORE
 		strcpy(statepath + strlen(statepath)-strlen("state"), "gst");
 		pc = load_gst(gen, statepath);
 		ret = pc != 0;
+#endif
 	}
+#ifndef NEW_CORE
 	if (ret) {
 		gen->m68k->resume_pc = get_native_address_trans(gen->m68k, pc);
 	}
+#endif
 done:
 	free(statepath);
 	return ret;
@@ -1276,27 +1324,35 @@ static void start_genesis(system_header *system, char *statefile)
 		if (load_from_file(&state, statefile)) {
 			genesis_deserialize(&state, gen);
 			free(state.data);
+#ifndef NEW_CORE
 			//HACK
 			pc = gen->m68k->last_prefetch_address;
+#endif
 		} else {
+#ifndef NEW_CORE
 			pc = load_gst(gen, statefile);
 			if (!pc) {
 				fatal_error("Failed to load save state %s\n", statefile);
 			}
+#endif
 		}
 		printf("Loaded %s\n", statefile);
+#ifndef NEW_CORE
 		if (gen->header.enter_debugger) {
 			gen->header.enter_debugger = 0;
 			insert_breakpoint(gen->m68k, pc, gen->header.debugger_type == DEBUGGER_NATIVE ? debugger : gdb_debug_enter);
 		}
+#endif
 		adjust_int_cycle(gen->m68k, gen->vdp);
 		start_68k_context(gen->m68k, pc);
 	} else {
+#ifndef NEW_CORE
 		if (gen->header.enter_debugger) {
 			gen->header.enter_debugger = 0;
 			uint32_t address = gen->cart[2] << 16 | gen->cart[3];
 			insert_breakpoint(gen->m68k, address, gen->header.debugger_type == DEBUGGER_NATIVE ? debugger : gdb_debug_enter);
 		}
+#endif
 		m68k_reset(gen->m68k);
 	}
 	handle_reset_requests(gen);
