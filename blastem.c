@@ -11,10 +11,10 @@
 #include "system.h"
 #include "68kinst.h"
 #include "m68k_core.h"
-#ifdef NEW_CORE
-#include "z80.h"
-#else
+#ifndef NEW_CORE
 #include "z80_to_x86.h"
+#else
+#include "z80.h"
 #endif
 #include "mem.h"
 #include "vdp.h"
@@ -390,15 +390,19 @@ void init_system_with_media(const char *path, system_type force_stype)
 {
 	if (game_system) {
 		game_system->persist_save(game_system);
+#ifndef NEW_CORE
 		//swap to game context arena and mark all allocated pages in it free
 		if (current_system == menu_system) {
 			current_system->arena = set_current_arena(game_system->arena);
 		}
 		mark_all_free();
+#endif
 		game_system->free_context(game_system);
+#ifndef NEW_CORE
 	} else if(current_system) {
 		//start a new arena and save old one in suspended system context
 		current_system->arena = start_new_arena();
+#endif
 	}
 	system_type stype = SYSTEM_UNKNOWN;
 	if (!(cart.size = load_rom(path, &cart.buffer, &stype))) {
@@ -485,11 +489,13 @@ int main(int argc, char ** argv)
 					debug_target = 1;
 				}
 				break;
+#ifndef NEW_CORE
 			case 'D':
 				gdb_remote_init();
 				dtype = DEBUGGER_GDB;
 				start_in_debugger = 1;
 				break;
+#endif
 			case 'e':
 				i++;
 				if (i >= argc) {
@@ -600,12 +606,12 @@ int main(int argc, char ** argv)
 			if (reader_port) {
 				reader_addr = argv[i];
 			} else {
-				if (!(cart.size = load_rom(argv[i], &cart.buffer, stype == SYSTEM_UNKNOWN ? &stype : NULL))) {
-					fatal_error("Failed to open %s for reading\n", argv[i]);
-				}
-				cart.dir = path_dirname(argv[i]);
-				cart.name = basename_no_extension(argv[i]);
-				cart.extension = path_extension(argv[i]);
+			if (!(cart.size = load_rom(argv[i], &cart.buffer, stype == SYSTEM_UNKNOWN ? &stype : NULL))) {
+				fatal_error("Failed to open %s for reading\n", argv[i]);
+			}
+			cart.dir = path_dirname(argv[i]);
+			cart.name = basename_no_extension(argv[i]);
+			cart.extension = path_extension(argv[i]);
 			}
 			romfname = argv[i];
 			loaded = 1;
@@ -716,7 +722,7 @@ int main(int argc, char ** argv)
 		menu = 0;
 	}
 #endif
-
+	
 	if (reader_addr) {
 		init_event_reader_tcp(&reader, reader_addr, reader_port);
 		stype = reader_system_type(&reader);
@@ -751,7 +757,9 @@ int main(int argc, char ** argv)
 			current_system->start_context(current_system, statefile);
 			render_video_loop();
 		} else if (menu && game_system) {
+#ifndef NEW_CORE
 			current_system->arena = set_current_arena(game_system->arena);
+#endif
 			current_system = game_system;
 			menu = 0;
 			current_system->resume_context(current_system);
@@ -761,7 +769,9 @@ int main(int argc, char ** argv)
 				ui_idle_loop();
 #endif
 			} else {
+#ifndef NEW_CORE
 				current_system->arena = set_current_arena(menu_system->arena);
+#endif
 				current_system = menu_system;
 				menu = 1;
 			}
