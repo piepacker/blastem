@@ -1,0 +1,11 @@
+# vim
+*.swp
+*.swo
+
+# Build file
+*.o
+*.so
+
+# generated file
+z80.*
+m68k.*
