@@ -374,6 +374,8 @@ void render_framebuffer_updated(uint8_t which, int width)
 		struct retro_game_geometry geometry = {
 			.base_width = width,
 			.base_height = height,
+			.max_width = width,
+			.max_height = height * 2,
 			.aspect_ratio = (float)LINEBUF_SIZE / base_height
 		};
 		retro_environment(RETRO_ENVIRONMENT_SET_GEOMETRY, &geometry);
