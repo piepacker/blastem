@@ -723,11 +723,11 @@ static uint16_t vdp_port_read(uint32_t vdp_port, m68k_context * context)
 	uint16_t value;
 #ifdef REFRESH_EMULATION
 	if (context->current_cycle - 4*MCLKS_PER_68K > last_sync_cycle) {
-	//do refresh check here so we can avoid adding a penalty for a refresh that happens during a VDP access
-	refresh_counter += context->current_cycle - 4*MCLKS_PER_68K - last_sync_cycle;
-	context->current_cycle += REFRESH_DELAY * MCLKS_PER_68K * (refresh_counter / (MCLKS_PER_68K * REFRESH_INTERVAL));
-	refresh_counter = refresh_counter % (MCLKS_PER_68K * REFRESH_INTERVAL);
-	last_sync_cycle = context->current_cycle;
+		//do refresh check here so we can avoid adding a penalty for a refresh that happens during a VDP access
+		refresh_counter += context->current_cycle - 4*MCLKS_PER_68K - last_sync_cycle;
+		context->current_cycle += REFRESH_DELAY * MCLKS_PER_68K * (refresh_counter / (MCLKS_PER_68K * REFRESH_INTERVAL));
+		refresh_counter = refresh_counter % (MCLKS_PER_68K * REFRESH_INTERVAL);
+		last_sync_cycle = context->current_cycle;
 	}
 #endif
 	sync_components(context, 0);
@@ -819,11 +819,13 @@ static m68k_context * io_write(uint32_t location, m68k_context * context, uint8_
 {
 	genesis_context * gen = context->system;
 #ifdef REFRESH_EMULATION
-	//do refresh check here so we can avoid adding a penalty for a refresh that happens during an IO area access
-	refresh_counter += context->current_cycle - 4*MCLKS_PER_68K - last_sync_cycle;
-	context->current_cycle += REFRESH_DELAY * MCLKS_PER_68K * (refresh_counter / (MCLKS_PER_68K * REFRESH_INTERVAL));
-	refresh_counter = refresh_counter % (MCLKS_PER_68K * REFRESH_INTERVAL);
-	last_sync_cycle = context->current_cycle - 4*MCLKS_PER_68K;
+	if (context->current_cycle - 4*MCLKS_PER_68K > last_sync_cycle) {
+		//do refresh check here so we can avoid adding a penalty for a refresh that happens during an IO area access
+		refresh_counter += context->current_cycle - 4*MCLKS_PER_68K - last_sync_cycle;
+		context->current_cycle += REFRESH_DELAY * MCLKS_PER_68K * (refresh_counter / (MCLKS_PER_68K * REFRESH_INTERVAL));
+		refresh_counter = refresh_counter % (MCLKS_PER_68K * REFRESH_INTERVAL);
+		last_sync_cycle = context->current_cycle - 4*MCLKS_PER_68K;
+	}
 #endif
 	if (location < 0x10000) {
 		//Access to Z80 memory incurs a one 68K cycle wait state
@@ -979,11 +981,13 @@ static uint8_t io_read(uint32_t location, m68k_context * context)
 	uint8_t value;
 	genesis_context *gen = context->system;
 #ifdef REFRESH_EMULATION
-	//do refresh check here so we can avoid adding a penalty for a refresh that happens during an IO area access
-	refresh_counter += context->current_cycle - 4*MCLKS_PER_68K - last_sync_cycle;
-	context->current_cycle += REFRESH_DELAY * MCLKS_PER_68K * (refresh_counter / (MCLKS_PER_68K * REFRESH_INTERVAL));
-	refresh_counter = refresh_counter % (MCLKS_PER_68K * REFRESH_INTERVAL);
-	last_sync_cycle = context->current_cycle - 4*MCLKS_PER_68K;
+	if (context->current_cycle - 4*MCLKS_PER_68K > last_sync_cycle) {
+		//do refresh check here so we can avoid adding a penalty for a refresh that happens during an IO area access
+		refresh_counter += context->current_cycle - 4*MCLKS_PER_68K - last_sync_cycle;
+		context->current_cycle += REFRESH_DELAY * MCLKS_PER_68K * (refresh_counter / (MCLKS_PER_68K * REFRESH_INTERVAL));
+		refresh_counter = refresh_counter % (MCLKS_PER_68K * REFRESH_INTERVAL);
+		last_sync_cycle = context->current_cycle - 4*MCLKS_PER_68K;
+	}
 #endif
 	if (location < 0x10000) {
 		//Access to Z80 memory incurs a one 68K cycle wait state
