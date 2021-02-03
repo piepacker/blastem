@@ -106,6 +106,8 @@ void genesis_serialize(genesis_context *gen, serialize_buffer *buf, uint32_t m68
 		
 		cart_serialize(&gen->header, buf);
 	}
+	// Ensure a final zero is written to detect the end of serialization
+	save_int16(buf, 0);
 }
 
 static uint8_t *serialize(system_header *sys, size_t *size_out)
