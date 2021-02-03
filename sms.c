@@ -247,6 +247,9 @@ void sms_serialize(sms_context *sms, serialize_buffer *buf)
 	save_int8(buf, SMS_CART_RAM_SIZE / 1024);
 	save_buffer8(buf, sms->cart_ram, SMS_CART_RAM_SIZE);
 	end_section(buf);
+
+	// Ensure a final zero is written to detect the end of serialization
+	save_int16(buf, 0);
 }
 
 static uint8_t *serialize(system_header *sys, size_t *size_out)
