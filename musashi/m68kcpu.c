@@ -751,6 +751,11 @@ void m68k_reset_cpu(m68000_base_device *this)
 	/* Go to supervisor mode */
 	m68ki_set_sm_flag(this, SFLAG_SET | MFLAG_CLEAR);
 
+	/* Disable IRQ */
+	uint32_t sr = m68ki_get_sr(this);
+	sr |= 0x0700;
+	m68ki_set_sr_noint(this, sr);
+
 	/* Invalidate the prefetch queue */
 	/* Set to arbitrary number since our first fetch is from 0 */
 	this->pref_addr = 0x1000;
