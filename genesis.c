@@ -51,6 +51,15 @@ uint32_t MCLKS_PER_68K;
 #define Z80_OPTS options
 #endif
 
+//My refresh emulation isn't currently good enough and causes more problems than it solves
+#define REFRESH_EMULATION
+#ifdef REFRESH_EMULATION
+#define REFRESH_INTERVAL 128
+#define REFRESH_DELAY 2
+uint32_t last_sync_cycle = 0;
+uint32_t refresh_counter = 0;
+#endif
+
 void genesis_serialize(genesis_context *gen, serialize_buffer *buf, uint32_t m68k_pc, uint8_t all)
 {
 	if (all) {
@@ -116,6 +125,17 @@ void genesis_serialize(genesis_context *gen, serialize_buffer *buf, uint32_t m68
 		
 		cart_serialize(&gen->header, buf);
 	}
+
+	start_section(buf, SECTION_TOP);
+#ifdef REFRESH_EMULATION
+	save_int32(buf, last_sync_cycle);
+	save_int32(buf, refresh_counter);
+#else
+	save_int32(buf, 0);
+	save_int32(buf, 0);
+#endif
+	end_section(buf);
+
 	// Ensure a final zero is written to detect the end of serialization
 	save_int16(buf, 0);
 }
@@ -192,6 +212,14 @@ static void tmss_deserialize(deserialize_buffer *buf, void *vgen)
 	load_buffer16(buf, gen->tmss_lock, 2);
 }
 
+static void top_deserialize(deserialize_buffer *buf, void* nop)
+{
+#ifdef REFRESH_EMULATION
+	last_sync_cycle = load_int32(buf);
+	refresh_counter = load_int32(buf);
+#endif
+}
+
 static void adjust_int_cycle(m68k_context * context, vdp_context * v_context);
 static void check_tmss_lock(genesis_context *gen);
 static void toggle_tmss_rom(genesis_context *gen);
@@ -209,6 +237,7 @@ void genesis_deserialize(deserialize_buffer *buf, genesis_context *gen)
 	register_section_handler(buf, (section_handler){.fun = ram_deserialize, .data = gen}, SECTION_MAIN_RAM);
 	register_section_handler(buf, (section_handler){.fun = zram_deserialize, .data = gen}, SECTION_SOUND_RAM);
 	register_section_handler(buf, (section_handler){.fun = cart_deserialize, .data = gen}, SECTION_MAPPER);
+	register_section_handler(buf, (section_handler){.fun = top_deserialize, .data = gen}, SECTION_TOP);
 	register_section_handler(buf, (section_handler){.fun = tmss_deserialize, .data = gen}, SECTION_TMSS);
 	uint8_t tmss_old = gen->tmss;
 	gen->tmss = 0xFF;
@@ -409,15 +438,6 @@ static void sync_sound(genesis_context * gen, uint32_t target)
 
 	//printf("Target: %d, YM bufferpos: %d, PSG bufferpos: %d\n", target, gen->ym->buffer_pos, gen->psg->buffer_pos * 2);
 }
-
-//My refresh emulation isn't currently good enough and causes more problems than it solves
-#define REFRESH_EMULATION
-#ifdef REFRESH_EMULATION
-#define REFRESH_INTERVAL 128
-#define REFRESH_DELAY 2
-uint32_t last_sync_cycle;
-uint32_t refresh_counter;
-#endif
 
 #include <limits.h>
 #define ADJUST_BUFFER (8*MCLKS_LINE*313)

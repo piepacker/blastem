@@ -47,7 +47,8 @@ enum {
 	SECTION_MAPPER,
 	SECTION_EEPROM,
 	SECTION_CART_RAM,
-	SECTION_TMSS
+	SECTION_TMSS,
+	SECTION_TOP
 };
 
 void init_serialize(serialize_buffer *buf);
