@@ -111,8 +111,7 @@ static uint32_t overscan_top, overscan_bot, overscan_left, overscan_right;
 static void update_overscan(void)
 {
 	uint8_t overscan;
-	retro_environment(RETRO_ENVIRONMENT_GET_OVERSCAN, &overscan);
-	if (overscan) {
+	if (retro_environment(RETRO_ENVIRONMENT_GET_OVERSCAN, &overscan) && overscan) {
 		overscan_top = overscan_bot = overscan_left = overscan_right = 0;
 	} else {
 		if (video_standard == VID_NTSC) {
