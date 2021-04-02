@@ -94,7 +94,8 @@ void end_section(serialize_buffer *buf)
 {
 	size_t section_size = buf->size - buf->current_section_start;
 	if (section_size > 0xFFFFFFFFU) {
-		fatal_error("Sections larger than 4GB are not supported");
+		warning("Sections larger than 4GB are not supported");
+		return;
 	}
 	uint32_t size = section_size;
 	uint8_t *field = buf->data + buf->current_section_start - sizeof(uint32_t);
@@ -136,7 +137,8 @@ uint32_t load_int32(deserialize_buffer *buf)
 {
 	uint32_t val;
 	if ((buf->size - buf->cur_pos) < sizeof(val)) {
-		fatal_error("Failed to load required int32 field");
+		warning("Failed to load required int32 field");
+		return 0;
 	}
 	val = buf->data[buf->cur_pos++] << 24;
 	val |= buf->data[buf->cur_pos++] << 16;
@@ -149,7 +151,8 @@ uint16_t load_int16(deserialize_buffer *buf)
 {
 	uint16_t val;
 	if ((buf->size - buf->cur_pos) < sizeof(val)) {
-		fatal_error("Failed to load required int16 field");
+		warning("Failed to load required int16 field");
+		return 0;
 	}
 	val = buf->data[buf->cur_pos++] << 8;
 	val |= buf->data[buf->cur_pos++];
@@ -160,7 +163,8 @@ uint8_t load_int8(deserialize_buffer *buf)
 {
 	uint8_t val;
 	if ((buf->size - buf->cur_pos) < sizeof(val)) {
-		fatal_error("Failed to load required int8 field");
+		warning("Failed to load required int8 field");
+		return 0;
 	}
 	val = buf->data[buf->cur_pos++];
 	return val;
@@ -169,7 +173,8 @@ uint8_t load_int8(deserialize_buffer *buf)
 void load_buffer8(deserialize_buffer *buf, void *dst, size_t len)
 {
 	if ((buf->size - buf->cur_pos) < len) {
-		fatal_error("Failed to load required buffer of size %d", len);
+		warning("Failed to load required buffer of size %d", len);
+		return;
 	}
 	memcpy(dst, buf->data + buf->cur_pos, len);
 	buf->cur_pos += len;
@@ -178,7 +183,8 @@ void load_buffer8(deserialize_buffer *buf, void *dst, size_t len)
 void load_buffer16(deserialize_buffer *buf, uint16_t *dst, size_t len)
 {
 	if ((buf->size - buf->cur_pos) < len * sizeof(uint16_t)) {
-		fatal_error("Failed to load required buffer of size %d\n", len);
+		warning("Failed to load required buffer of size %d\n", len);
+		return;
 	}
 	for(; len != 0; len--, dst++) {
 		uint16_t value = buf->data[buf->cur_pos++] << 8;
@@ -189,7 +195,8 @@ void load_buffer16(deserialize_buffer *buf, uint16_t *dst, size_t len)
 void load_buffer32(deserialize_buffer *buf, uint32_t *dst, size_t len)
 {
 	if ((buf->size - buf->cur_pos) < len * sizeof(uint32_t)) {
-		fatal_error("Failed to load required buffer of size %d\n", len);
+		warning("Failed to load required buffer of size %d\n", len);
+		return;
 	}
 	for(; len != 0; len--, dst++) {
 		uint32_t value = buf->data[buf->cur_pos++] << 24;
@@ -203,7 +210,8 @@ void load_buffer32(deserialize_buffer *buf, uint32_t *dst, size_t len)
 int load_section(deserialize_buffer *buf)
 {
 	if (!buf->handlers) {
-		fatal_error("load_section called on a deserialize_buffer with no handlers registered\n");
+		warning("load_section called on a deserialize_buffer with no handlers registered\n");
+		return 0;
 	}
 	uint16_t section_id = load_int16(buf);
 	if (section_id == SECTION_END_OF_SERIALIZATION) {
@@ -211,7 +219,8 @@ int load_section(deserialize_buffer *buf)
 	}
 	uint32_t size = load_int32(buf);
 	if (size > (buf->size - buf->cur_pos)) {
-		fatal_error("Section is bigger than remaining space in file");
+		warning("Section is bigger than remaining space in file");
+		return 0;
 	}
 	if (section_id > buf->max_handler || !buf->handlers[section_id].fun) {
 		warning("No handler for section ID %d, save state may be from a newer version\n", section_id);
