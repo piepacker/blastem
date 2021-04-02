@@ -1319,6 +1319,9 @@ void m68k_serialize(m68k_context *context, uint32_t pc, serialize_buffer *buf)
 	save_int8(buf, context->int_num);
 	save_int8(buf, context->int_pending);
 	save_int8(buf, context->trace_pending);
+#ifdef NEW_CORE
+	save_int8(buf, context->status);
+#endif
 }
 
 void m68k_deserialize(deserialize_buffer *buf, void *vcontext)
@@ -1352,6 +1355,9 @@ void m68k_deserialize(deserialize_buffer *buf, void *vcontext)
 	context->int_num = load_int8(buf);
 	context->int_pending = load_int8(buf);
 	context->trace_pending = load_int8(buf);
+#ifdef NEW_CORE
+	context->status = load_int8(buf);
+#endif
 }
 
 #ifdef NEW_CORE
