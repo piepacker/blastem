@@ -1096,6 +1096,7 @@ void io_deserialize(deserialize_buffer *buf, void *vport)
 		warning("Loaded save state has a different device type from the current configuration");
 		return;
 	}
+	load_buffer32(buf, port->slow_rise_start, 8);
 	switch (port->device_type)
 	{
 	case IO_GAMEPAD6:
