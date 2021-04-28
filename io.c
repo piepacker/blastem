@@ -265,9 +265,9 @@ void process_device(char * device_type, io_port * port)
 		return;
 	}
 
-	const int gamepad_len = strlen("gamepad");
 	if (startswith(device_type, "gamepad"))
 	{
+		const int gamepad_len = strlen("gamepad");
 		if (
 			(device_type[gamepad_len] != '3' && device_type[gamepad_len] != '6' && device_type[gamepad_len] != '2')
 			|| device_type[gamepad_len+1] != '.' || device_type[gamepad_len+2] < '1'
@@ -306,6 +306,30 @@ void process_device(char * device_type, io_port * port)
 			port->device_type = IO_XBAND_KEYBOARD;
 			port->device.keyboard.read_pos = 0xFF;
 			port->device.keyboard.write_pos = 0;
+		}
+	} else if(startswith(device_type, "sega_multi")) {
+		if (port->device_type != IO_SEGA_MULTI) {
+			port->device_type = IO_SEGA_MULTI;
+			port->device.stream.data_fd = -1;
+			port->device.stream.listen_fd = -1;
+			const int segamulti_len = strlen("sega_multi");
+			uint8_t gamepad_type = device_type[segamulti_len];
+			uint8_t gamepad_sep = device_type[segamulti_len+1];
+			uint8_t gamepad_num = device_type[segamulti_len+2] - '0';
+			if ((gamepad_type != '3' && gamepad_type != '6') || gamepad_sep != '.' || gamepad_num > 9) {
+				warning("%s is not a valid sega multi type\n", device_type);
+			} else {
+				// Same type for all 4 pads with consecutive number
+				switch (gamepad_type) {
+					case '3': port->device.sega_multi.gamepad_type = IO_GAMEPAD3; break;
+					case '6': port->device.sega_multi.gamepad_type = IO_GAMEPAD6; break;
+					default:  port->device.sega_multi.gamepad_type = IO_NONE; break;
+				}
+				for (int i = 0; i < 4; i++) {
+					port->device.sega_multi.gamepad_num[i] = gamepad_num;
+					gamepad_num++;
+				}
+			}
 		}
 	} else if(!strcmp(device_type, "sega_parallel")) {
 		if (port->device_type != IO_SEGA_PARALLEL) {
