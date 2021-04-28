@@ -654,10 +654,12 @@ enum {
 
 void io_control_write(io_port *port, uint8_t value, uint32_t current_cycle)
 {
+	printf("CTRL W MT: port=%p value=%x\n", port, value);
 	uint8_t changes = value ^ port->control;
 	if (changes) {
 		for (int i = 0; i < 8; i++)
 		{
+#if 0
 			if (!(value & 1 << i) && !(port->output & 1 << i)) {
 				//port switched from output to input and the output value was 0
 				//since there is a weak pull-up on input pins, this will lead
@@ -666,6 +668,9 @@ void io_control_write(io_port *port, uint8_t value, uint32_t current_cycle)
 			} else {
 				port->slow_rise_start[i] = CYCLE_NEVER;
 			}
+#else
+				port->slow_rise_start[i] = CYCLE_NEVER;
+#endif
 		}
 		port->control = value;
 	}
@@ -735,6 +740,7 @@ void io_data_write(io_port * port, uint8_t value, uint32_t current_cycle)
 			port->device.sega_multi.th_counter++;
 			port->device.sega_multi.timeout_cycle = current_cycle + TH_TIMEOUT;
 		}
+		printf("DATA W MT: port=%p value=%x th_counter=%d\n", port, value, port->device.sega_multi.th_counter);
 		break;
 	case IO_XBAND_KEYBOARD:
 		if (output & TH) {
@@ -1189,6 +1195,15 @@ uint8_t io_data_read(io_port * port, uint32_t current_cycle)
 	/*if (port->input[GAMEPAD_TH0] || port->input[GAMEPAD_TH1]) {
 		printf ("value: %X\n", value);
 	}*/
+	switch (port->device_type) {
+		case IO_SEGA_MULTI: {
+			printf("\tDATA R MT: port=%p value=%x (th_counter=%d th=%d tr=%d)\n\n", port, value, port->device.sega_multi.th_counter, th, tr);
+			break;
+							}
+		default:
+			//printf("DATA R: port=%p value=%x (th_counter=%d th=%d)\n", port, value, port->device.pad.th_counter, th);
+			break;
+	}
 	return value;
 }
 
