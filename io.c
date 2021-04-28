@@ -1700,6 +1700,11 @@ void io_serialize(io_port *port, serialize_buffer *buf)
 		save_int8(buf, port->device.heartbeat_trainer.cmd);
 		save_int8(buf, port->device.heartbeat_trainer.remaining_bytes);
 		break;
+	case IO_SEGA_MULTI:
+		save_int32(buf, port->device.sega_multi.timeout_cycle);
+		save_int16(buf, port->device.sega_multi.th_counter);
+		save_int8(buf, port->device.sega_multi.gamepad_type);
+		break;
 	}
 	save_int32(buf, port->serial_cycle);
 	save_int32(buf, port->transmit_end);
@@ -1753,6 +1758,14 @@ void io_deserialize(deserialize_buffer *buf, void *vport)
 		port->device.heartbeat_trainer.status = load_int8(buf);
 		port->device.heartbeat_trainer.cmd = load_int8(buf);
 		port->device.heartbeat_trainer.remaining_bytes = load_int8(buf);
+		break;
+	case IO_SEGA_MULTI:
+		port->device.sega_multi.timeout_cycle = load_int32(buf);
+		port->device.sega_multi.th_counter = load_int16(buf);
+		uint8_t gamepad_type = load_int8(buf);
+		if (port->device.sega_multi.gamepad_type != gamepad_type) {
+			warning("Loaded save state has a different SEGA-MULTI device type from the current configuration");
+		}
 		break;
 	}
 	if (buf->cur_pos < buf->size) {
