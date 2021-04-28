@@ -24,6 +24,10 @@
 
 #define CYCLE_NEVER 0xFFFFFFFF
 #define MIN_POLL_INTERVAL 6840
+#define TH 0x40
+#define TR 0x20
+#define TL 0x10
+#define TH_TIMEOUT 56000
 
 const char * device_type_names[] = {
 	"None",
@@ -527,11 +531,6 @@ cleanup_sock:
 	}
 }
 
-
-#define TH 0x40
-#define TR 0x20
-#define TH_TIMEOUT 56000
-
 void mouse_check_ready(io_port *port, uint32_t current_cycle)
 {
 	if (current_cycle >= port->device.mouse.ready_cycle) {
@@ -575,6 +574,12 @@ void io_adjust_cycles(io_port * port, uint32_t current_cycle, uint32_t deduction
 		mouse_check_ready(port, current_cycle);
 		if (port->device.mouse.ready_cycle != CYCLE_NEVER) {
 			port->device.mouse.ready_cycle -= deduction;
+		}
+	} else if (port->device_type == IO_SEGA_MULTI) {
+		if (current_cycle >= port->device.sega_multi.timeout_cycle) {
+			port->device.sega_multi.th_counter = 0;
+		} else {
+			port->device.sega_multi.timeout_cycle -= deduction;
 		}
 	}
 	for (int i = 0; i < 8; i++)
@@ -1144,6 +1149,17 @@ void io_data_write(io_port * port, uint8_t value, uint32_t current_cycle)
 			}
 		}
 		break;
+	case IO_SEGA_MULTI:
+		if (output & TH) {
+			// request is over
+			port->device.sega_multi.th_counter = 0;
+		}
+		else if ((old_output ^ output) & TR) {
+			// Ask new data
+			port->device.sega_multi.th_counter++;
+			port->device.sega_multi.timeout_cycle = current_cycle + TH_TIMEOUT;
+		}
+		break;
 	case IO_XBAND_KEYBOARD:
 		if (output & TH) {
 			//request is over
@@ -1272,7 +1288,8 @@ uint8_t io_data_read(io_port * port, uint32_t current_cycle)
 {
 	uint8_t output = get_output_value(port, current_cycle, SLOW_RISE_DEVICE);
 	uint8_t control = port->control | 0x80;
-	uint8_t th = output & 0x40;
+	uint8_t th = output & TH;
+	uint8_t tr = output & TR;
 	uint8_t input;
 	uint8_t device_driven;
 	if (current_cycle - port->last_poll_cycle > MIN_POLL_INTERVAL) {
@@ -1327,7 +1344,6 @@ uint8_t io_data_read(io_port * port, uint32_t current_cycle)
 	case IO_MOUSE:
 	{
 		mouse_check_ready(port, current_cycle);
-		uint8_t tr = output & TR;
 		if (th) {
 			if (tr) {
 				input = 0x10;
@@ -1389,7 +1405,6 @@ uint8_t io_data_read(io_port * port, uint32_t current_cycle)
 		if (th) {
 			input = 0x11;
 		} else {
-			uint8_t tr = output & TR;
 			uint16_t code = port->device.keyboard.read_pos == 0xFF ? 0 
 				: port->device.keyboard.events[port->device.keyboard.read_pos];
 			switch (port->device.keyboard.tr_counter)
@@ -1518,6 +1533,63 @@ uint8_t io_data_read(io_port * port, uint32_t current_cycle)
 			input |= ((port->device.keyboard.tr_counter & 1) == 0) << 4;
 		}
 		//this is not strictly correct at all times, but good enough for now
+		device_driven = 0x1F;
+		break;
+	}
+	case IO_SEGA_MULTI: {
+		if (current_cycle >= port->device.sega_multi.timeout_cycle) {
+			port->device.sega_multi.th_counter = 0;
+		}
+		// TL bit is used as an ack (of TR level) when data is available
+		input = tr ? TL : 0;
+		uint16_t th_counter = port->device.sega_multi.th_counter;
+		switch (th_counter) {
+			case 0: input |= th ? 0x3 : 0xF; // Allow to detect multitap device
+					break;
+			case 1:
+			case 2:
+					input |= 0; // Start of multitap header must be 0
+					break;
+			case 3:
+			case 4:
+			case 5:
+			case 6:
+					// Pad id
+					switch (port->device.sega_multi.gamepad_type) {
+						case IO_GAMEPAD3: input |= 0;   break;
+						case IO_GAMEPAD6: input |= 1;   break;
+						case IO_MOUSE:	  input |= 2;   break;
+						default:		  input |= 0xF; break; // unconnected
+					}
+					break;
+			default: {
+					int slot = 0;
+					int pad_th_counter = 0;
+					int th_ref = th_counter - 7;
+					switch (port->device.sega_multi.gamepad_type) {
+						case IO_GAMEPAD3:
+							// 2 nibbles for 3 buttons
+							slot = th_ref / 2;
+							pad_th_counter = th_ref - slot * 2;
+							input |= ~(port->input4[slot][pad_th_counter]) & 0xF;
+							break;
+						case IO_GAMEPAD6:
+							// 3 nibbles for 6 buttons
+							slot = th_ref / 3;
+							pad_th_counter = th_ref - slot * 3;
+							input |= ~(port->input4[slot][pad_th_counter]) & 0xF;
+							break;
+						case IO_MOUSE:
+							// 6 nibbles for mouse
+							fatal_error("IO_MOUSE isn't supported with multitap");
+						default:
+							// 0? nibble for unconnected
+							break;
+					}
+
+					break;
+					}
+		}
 		device_driven = 0x1F;
 		break;
 	}
