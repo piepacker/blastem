@@ -76,10 +76,17 @@ typedef struct {
 			uint8_t  cmd;
 			uint8_t  remaining_bytes;
 		} heartbeat_trainer;
+		struct {
+			uint32_t timeout_cycle;
+			uint16_t th_counter;
+			uint8_t gamepad_num[4];
+			uint8_t gamepad_type;
+		} sega_multi;
 	} device;
 	uint8_t  output;
 	uint8_t  control;
 	uint8_t  input[3];
+	uint8_t  input4[4][3]; // Same as input but for multi-tap
 	uint32_t slow_rise_start[8];
 	uint32_t serial_cycle;
 	uint32_t serial_divider;
@@ -144,8 +151,8 @@ uint32_t io_next_interrupt(io_port *port, uint32_t current_cycle);
 void io_serialize(io_port *port, serialize_buffer *buf);
 void io_deserialize(deserialize_buffer *buf, void *vport);
 
-void io_port_gamepad_down(io_port *port, uint8_t button);
-void io_port_gamepad_up(io_port *port, uint8_t button);
+void io_port_gamepad_down(io_port *port, uint8_t slot, uint8_t button);
+void io_port_gamepad_up(io_port *port, uint8_t slot, uint8_t button);
 void io_gamepad_down(sega_io *io, uint8_t gamepad_num, uint8_t button);
 void io_gamepad_up(sega_io *io, uint8_t gamepad_num, uint8_t button);
 void io_mouse_down(sega_io *io, uint8_t mouse_num, uint8_t button);

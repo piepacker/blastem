@@ -87,8 +87,25 @@ static gp_button_def button_defs[NUM_GAMEPAD_BUTTONS] = {
 	[BUTTON_MODE] = {.states = {GAMEPAD_EXTRA, GAMEPAD_NONE}, .value = 0x8},
 };
 
-static io_port *find_gamepad(sega_io *io, uint8_t gamepad_num)
+static uint16_t sega_multi_button_def[NUM_GAMEPAD_BUTTONS] = {
+	0x00, // BUTTON_INVALID,
+	0x01, // DPAD_UP,
+	0x02, // DPAD_DOWN,
+	0x04, // DPAD_LEFT,
+	0x08, // DPAD_RIGHT,
+	0x14, // BUTTON_A,
+	0x11, // BUTTON_B,
+	0x12, // BUTTON_C,
+	0x18, // BUTTON_START,
+	0x24, // BUTTON_X,
+	0x22, // BUTTON_Y,
+	0x21, // BUTTON_Z,
+	0x28, // BUTTON_MODE,
+};
+
+static io_port *find_gamepad(sega_io *io, uint8_t gamepad_num, uint8_t *slot_num)
 {
+	*slot_num = 0;
 	for (int i = 0; i < 3; i++)
 	{
 		io_port *port = io->ports + i;
@@ -97,7 +114,15 @@ static io_port *find_gamepad(sega_io *io, uint8_t gamepad_num)
 		}
 		if (port->device_type == IO_HEARTBEAT_TRAINER && port->device.heartbeat_trainer.device_num == gamepad_num) {
 			return port;
-		} 
+		}
+		if (port->device_type == IO_SEGA_MULTI) {
+			for (int j = 0; j < 3; j++) {
+				if (port->device.sega_multi.gamepad_num[j] == gamepad_num) {
+					*slot_num = j;
+					return port;
+				}
+			}
+		}
 	}
 	return NULL;
 }
@@ -126,37 +151,59 @@ static io_port *find_keyboard(sega_io *io)
 	return NULL;
 }
 
-void io_port_gamepad_down(io_port *port, uint8_t button)
+void io_port_gamepad_down(io_port *port, uint8_t slot, uint8_t button)
 {
-	gp_button_def *def = button_defs + button;
-	port->input[def->states[0]] |= def->value;
-	if (def->states[1] != GAMEPAD_NONE) {
-		port->input[def->states[1]] |= def->value;
+	if (slot == 0) {
+		// Single pad connected on the port
+		gp_button_def *def = button_defs + button;
+		port->input[def->states[0]] |= def->value;
+		if (def->states[1] != GAMEPAD_NONE) {
+			port->input[def->states[1]] |= def->value;
+		}
+	}
+	if (slot < 4) {
+		// Multi-tap connected on the port
+		uint8_t data   = sega_multi_button_def[button];
+		uint8_t val    = data & 0xF;
+		uint8_t nibble = (data >> 4) & 0xF;
+		port->input4[slot][nibble] |= val;
 	}
 }
 
-void io_port_gamepad_up(io_port *port, uint8_t button)
+void io_port_gamepad_up(io_port *port, uint8_t slot, uint8_t button)
 {
-	gp_button_def *def = button_defs + button;
-	port->input[def->states[0]] &= ~def->value;
-	if (def->states[1] != GAMEPAD_NONE) {
-		port->input[def->states[1]] &= ~def->value;
+	if (slot == 0) {
+		// Single pad connected on the port
+		gp_button_def *def = button_defs + button;
+		port->input[def->states[0]] &= ~def->value;
+		if (def->states[1] != GAMEPAD_NONE) {
+			port->input[def->states[1]] &= ~def->value;
+		}
+	}
+	if (slot < 4) {
+		// Multi-tap connected on the port
+		uint8_t data   = sega_multi_button_def[button];
+		uint8_t val    = data & 0xF;
+		uint8_t nibble = (data >> 4) & 0xF;
+		port->input4[slot][nibble] &= ~val;
 	}
 }
 
 void io_gamepad_down(sega_io *io, uint8_t gamepad_num, uint8_t button)
 {
-	io_port *port = find_gamepad(io, gamepad_num);
+	uint8_t slot = 0;
+	io_port *port = find_gamepad(io, gamepad_num, &slot);
 	if (port) {
-		io_port_gamepad_down(port, button);
+		io_port_gamepad_down(port, slot, button);
 	}
 }
 
 void io_gamepad_up(sega_io *io, uint8_t gamepad_num, uint8_t button)
 {
-	io_port *port = find_gamepad(io, gamepad_num);
+	uint8_t slot = 0;
+	io_port *port = find_gamepad(io, gamepad_num, &slot);
 	if (port) {
-		io_port_gamepad_up(port, button);
+		io_port_gamepad_up(port, slot, button);
 	}
 }
 

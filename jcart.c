@@ -70,7 +70,7 @@ void jcart_gamepad_down(genesis_context *context, uint8_t gamepad_num, uint8_t b
 		ports = NULL;
 	}
 	if (ports) {
-		io_port_gamepad_down(ports, button);
+		io_port_gamepad_down(ports, 0, button);
 	}
 }
 
@@ -83,6 +83,6 @@ void jcart_gamepad_up(genesis_context *context, uint8_t gamepad_num, uint8_t but
 		ports = NULL;
 	}
 	if (ports) {
-		io_port_gamepad_up(ports, button);
+		io_port_gamepad_up(ports, 0, button);
 	}
 }
