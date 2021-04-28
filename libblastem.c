@@ -529,7 +529,14 @@ void bindings_reacquire_capture(void)
 {
 }
 
-extern const char rom_db_data[];
+static const char rom_db_data[] = " \
+8e52a5d0adbff3b2a15f32e9299b4ffdf35f5541 {\n\
+	device_overrides {\n\
+		2 sega_multi6.2\n\
+	}\n\
+}\n\
+";
+
 char *read_bundled_file(char *name, uint32_t *sizeret)
 {
 	if (!strcmp(name, "rom.db")) {
