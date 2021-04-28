@@ -413,7 +413,8 @@ uint32_t render_overscan_bot()
 
 void process_events()
 {
-	static int16_t prev_state[2][RETRO_DEVICE_ID_JOYPAD_L2];
+#define MAX_PLAYER 12
+	static int16_t prev_state[MAX_PLAYER][RETRO_DEVICE_ID_JOYPAD_L2];
 	static const uint8_t map[] = {
 		BUTTON_B, BUTTON_A, BUTTON_MODE, BUTTON_START, DPAD_UP, DPAD_DOWN,
 		DPAD_LEFT, DPAD_RIGHT, BUTTON_C, BUTTON_Y, BUTTON_X, BUTTON_Z
@@ -421,7 +422,7 @@ void process_events()
 	//TODO: handle other input device types
 	//TODO: handle more than 2 ports when appropriate
 	retro_input_poll();
-	for (int port = 0; port < 2; port++)
+	for (int port = 0; port < MAX_PLAYER; port++)
 	{
 		for (int id = RETRO_DEVICE_ID_JOYPAD_B; id < RETRO_DEVICE_ID_JOYPAD_L2; id++)
 		{
