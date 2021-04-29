@@ -530,9 +530,14 @@ void bindings_reacquire_capture(void)
 }
 
 static const char rom_db_data[] = " \
-8e52a5d0adbff3b2a15f32e9299b4ffdf35f5541 {\n\
-	device_overrides {\n\
-		2 sega_multi6.2\n\
+8e52a5d0adbff3b2a15f32e9299b4ffdf35f5541 {\n" // Column 3 (USA)
+	"device_overrides {\n\
+		2 sega_multi666X.2\n\
+	}\n\
+}\n\
+2e850c2b737098b9926ac0fc9b8b2116fc5aa48a {\n" // Column 3 (Asia)
+	"device_overrides {\n\
+		2 sega_multi666X.2\n\
 	}\n\
 }\n\
 ";
