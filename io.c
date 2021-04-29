@@ -115,6 +115,14 @@ static io_port *find_gamepad(sega_io *io, uint8_t gamepad_num, uint8_t *slot_num
 				}
 			}
 		}
+		if (port->device_type == IO_EA_MULTI_A) {
+			for (int j = 0; j < 4; j++) {
+				if (port->device.ea_multi.gamepad_num[j] == gamepad_num) {
+					*slot_num = j;
+					return port;
+				}
+			}
+		}
 	}
 	return NULL;
 }
@@ -153,12 +161,20 @@ void io_port_gamepad_down(io_port *port, uint8_t slot, uint8_t button)
 			port->input[def->states[1]] |= def->value;
 		}
 	}
-	if (slot < 4) {
+	if (port->device_type == IO_SEGA_MULTI && slot < 4) {
 		// Multi-tap connected on the port
 		uint8_t data   = sega_multi_button_def[button];
 		uint8_t val    = data & 0xF;
 		uint8_t nibble = (data >> 4) & 0xF;
 		port->input4[slot][nibble] |= val;
+	}
+	if (port->device_type == IO_EA_MULTI_A && slot < 4) {
+		// Multi-tap connected on the port (just a multiplexer)
+		gp_button_def *def = button_defs + button;
+		port->input4[slot][def->states[0]] |= def->value;
+		if (def->states[1] != GAMEPAD_NONE) {
+			port->input4[slot][def->states[1]] |= def->value;
+		}
 	}
 }
 
@@ -172,12 +188,20 @@ void io_port_gamepad_up(io_port *port, uint8_t slot, uint8_t button)
 			port->input[def->states[1]] &= ~def->value;
 		}
 	}
-	if (slot < 4) {
+	if (port->device_type == IO_SEGA_MULTI && slot < 4) {
 		// Multi-tap connected on the port
 		uint8_t data   = sega_multi_button_def[button];
 		uint8_t val    = data & 0xF;
 		uint8_t nibble = (data >> 4) & 0xF;
 		port->input4[slot][nibble] &= ~val;
+	}
+	if (port->device_type == IO_EA_MULTI_A && slot < 4) {
+		// Multi-tap connected on the port (just a multiplexer)
+		gp_button_def *def = button_defs + button;
+		port->input4[slot][def->states[0]] &= ~def->value;
+		if (def->states[1] != GAMEPAD_NONE) {
+			port->input4[slot][def->states[1]] &= ~def->value;
+		}
 	}
 }
 
@@ -338,6 +362,34 @@ void process_device(char * device_type, io_port * port)
 	} else if(!strcmp(device_type, "sega_parallel")) {
 		if (port->device_type != IO_SEGA_PARALLEL) {
 			port->device_type = IO_SEGA_PARALLEL;
+			port->device.stream.data_fd = -1;
+			port->device.stream.listen_fd = -1;
+		}
+	} else if(startswith(device_type, "ea_multi_a")) {
+		if (port->device_type != IO_EA_MULTI_A) {
+			port->device_type = IO_EA_MULTI_A;
+			port->device.stream.data_fd = -1;
+			port->device.stream.listen_fd = -1;
+			const int eamulti_len = strlen("ea_multi_a");
+			uint8_t gamepad_type = device_type[eamulti_len];
+			if (gamepad_type != '3' && gamepad_type != '6') {
+				fatal_error("%s is not a valid EA multi type\n", device_type);
+			} else {
+				// Same type for all 4 pads with consecutive number
+				switch (gamepad_type) {
+					case '3': port->device.ea_multi.gamepad_type = IO_GAMEPAD3; break;
+					case '6': port->device.ea_multi.gamepad_type = IO_GAMEPAD6; break;
+					default:  port->device.ea_multi.gamepad_type = IO_NONE; break;
+				}
+				for (int i = 0; i < 4; i++) {
+					port->device.ea_multi.gamepad_num[i] = i + 1;
+				}
+				port->device.ea_multi.gamepad_sel = 0;
+			}
+		}
+	} else if(startswith(device_type, "ea_multi_b")) {
+		if (port->device_type != IO_EA_MULTI_B) {
+			port->device_type = IO_EA_MULTI_B;
 			port->device.stream.data_fd = -1;
 			port->device.stream.listen_fd = -1;
 		}
@@ -524,6 +576,12 @@ void io_adjust_cycles(io_port * port, uint32_t current_cycle, uint32_t deduction
 		} else {
 			port->device.sega_multi.timeout_cycle -= deduction;
 		}
+	} else if (port->device_type == IO_EA_MULTI_A) {
+		if (current_cycle >= port->device.ea_multi.timeout_cycle) {
+			port->device.ea_multi.th_counter = 0;
+		} else {
+			port->device.ea_multi.timeout_cycle -= deduction;
+		}
 	}
 	for (int i = 0; i < 8; i++)
 	{
@@ -671,7 +729,7 @@ void io_control_write(io_port *port, uint8_t value, uint32_t current_cycle)
 	}
 }
 
-void io_data_write(io_port * port, uint8_t value, uint32_t current_cycle)
+static void io_data_write_(io_port * port, uint8_t value, uint32_t current_cycle)
 {
 	uint8_t old_output = (port->control & port->output) | (~port->control & 0xFF);
 	uint8_t output = (port->control & value) | (~port->control & 0xFF);
@@ -734,6 +792,18 @@ void io_data_write(io_port * port, uint8_t value, uint32_t current_cycle)
 			// Ask new data
 			port->device.sega_multi.th_counter++;
 			port->device.sega_multi.timeout_cycle = current_cycle + TH_TIMEOUT;
+		}
+		break;
+	case IO_EA_MULTI_A:
+		//check if TH has changed
+		if ((old_output & TH) ^ (output & TH)) {
+			if (current_cycle >= port->device.ea_multi.timeout_cycle) {
+				port->device.ea_multi.th_counter = 0;
+			}
+			if ((output & TH)) {
+				port->device.ea_multi.th_counter++;
+			}
+			port->device.ea_multi.timeout_cycle = current_cycle + TH_TIMEOUT;
 		}
 		break;
 	case IO_XBAND_KEYBOARD:
@@ -810,6 +880,18 @@ void io_data_write(io_port * port, uint8_t value, uint32_t current_cycle)
 
 }
 
+void io_data_write(io_port * port, uint8_t port_nb, uint8_t value, uint32_t current_cycle)
+{
+	if (port->device_type == IO_EA_MULTI_A && port_nb == 1) {
+		// Special handling for EA multitap that use 2 ports
+		if ((value & 0xF) == 0xC) {
+			port->device.ea_multi.gamepad_sel = value >> 4;
+		}
+	} else  {
+		io_data_write_(port + port_nb, value, current_cycle);
+	}
+}
+
 uint8_t get_scancode_bytes(io_port *port)
 {
 	if (port->device.keyboard.read_pos == 0xFF) {
@@ -846,6 +928,36 @@ static uint8_t get_output_value(io_port *port, uint32_t current_cycle, uint32_t 
 	return output;
 }
 
+static uint8_t get_gamepad3_input(uint8_t input[3], uint8_t th) {
+	uint8_t v = input[th ? GAMEPAD_TH1 : GAMEPAD_TH0];
+	if (!th) {
+		v |= 0xC;
+	}
+	//controller output is logically inverted
+	return ~v;
+}
+
+static uint8_t get_gamepad6_input(uint8_t input[3], uint8_t th, uint8_t th_counter) {
+	uint8_t v = 0;
+	if (th) {
+		if (th_counter == 3) {
+			v = input[GAMEPAD_EXTRA];
+		} else {
+			v = input[GAMEPAD_TH1];
+		}
+	} else {
+		if (th_counter == 2) {
+			v = input[GAMEPAD_TH0] | 0xF;
+		} else if(th_counter == 3) {
+			v = input[GAMEPAD_TH0]  & 0x30;
+		} else {
+			v = input[GAMEPAD_TH0] | 0xC;
+		}
+	}
+	//controller output is logically inverted
+	return ~v;
+}
+
 uint8_t io_data_read(io_port * port, uint32_t current_cycle)
 {
 	uint8_t output = get_output_value(port, current_cycle, SLOW_RISE_DEVICE);
@@ -866,12 +978,7 @@ uint8_t io_data_read(io_port * port, uint32_t current_cycle)
 		break;
 	case IO_GAMEPAD3:
 	{
-		input = port->input[th ? GAMEPAD_TH1 : GAMEPAD_TH0];
-		if (!th) {
-			input |= 0xC;
-		}
-		//controller output is logically inverted
-		input = ~input;
+		input = get_gamepad3_input(port->input, th);
 		device_driven = 0x3F;
 		break;
 	}
@@ -883,23 +990,7 @@ uint8_t io_data_read(io_port * port, uint32_t current_cycle)
 		/*if (port->input[GAMEPAD_TH0] || port->input[GAMEPAD_TH1]) {
 			printf("io_data_read | control: %X, TH: %X, GAMEPAD_TH0: %X, GAMEPAD_TH1: %X, TH Counter: %d, Timeout: %d, Cycle: %d\n", control, th, port->input[GAMEPAD_TH0], port->input[GAMEPAD_TH1], port->th_counter,port->timeout_cycle, context->current_cycle);
 		}*/
-		if (th) {
-			if (port->device.pad.th_counter == 3) {
-				input = port->input[GAMEPAD_EXTRA];
-			} else {
-				input = port->input[GAMEPAD_TH1];
-			}
-		} else {
-			if (port->device.pad.th_counter == 2) {
-				input = port->input[GAMEPAD_TH0] | 0xF;
-			} else if(port->device.pad.th_counter == 3) {
-				input = port->input[GAMEPAD_TH0]  & 0x30;
-			} else {
-				input = port->input[GAMEPAD_TH0] | 0xC;
-			}
-		}
-		//controller output is logically inverted
-		input = ~input;
+		input = get_gamepad6_input(port->input, th, port->device.pad.th_counter);
 		device_driven = 0x3F;
 		break;
 	}
@@ -1155,6 +1246,26 @@ uint8_t io_data_read(io_port * port, uint32_t current_cycle)
 		device_driven = 0x1F;
 		break;
 	}
+	case IO_EA_MULTI_A:
+	{
+		uint8_t sel = port->device.ea_multi.gamepad_sel;
+		if (sel > 4) {
+			input = 0; // Id of multitap is 0
+		} else {
+			switch (port->device.ea_multi.gamepad_type) {
+				case IO_GAMEPAD3: input = get_gamepad3_input(port->input4[sel], th); break;
+				case IO_GAMEPAD6: input = get_gamepad6_input(port->input4[sel], th, port->device.ea_multi.th_counter); break;
+				default: break;
+			}
+		}
+		device_driven = 0x3F;
+		break;
+	}
+	case IO_EA_MULTI_B: {
+		input = 0x7F;
+		device_driven = 0x7F;
+		break;
+	}
 #ifndef _WIN32
 	case IO_SEGA_PARALLEL:
 		if (!th)
@@ -1228,6 +1339,15 @@ void io_serialize(io_port *port, serialize_buffer *buf)
 		save_int16(buf, port->device.sega_multi.th_counter);
 		save_int8(buf, port->device.sega_multi.gamepad_type);
 		break;
+	case IO_EA_MULTI_A:
+		save_int32(buf, port->device.ea_multi.timeout_cycle);
+		save_int16(buf, port->device.ea_multi.th_counter);
+		save_int8(buf, port->device.ea_multi.gamepad_type);
+		save_int8(buf, port->device.ea_multi.gamepad_sel);
+		break;
+	case IO_EA_MULTI_B:
+		// Only port A is saved
+		break;
 	}
 }
 
@@ -1267,13 +1387,27 @@ void io_deserialize(deserialize_buffer *buf, void *vport)
 			port->device.keyboard.cmd = load_int8(buf);
 		}
 		break;
-	case IO_SEGA_MULTI:
+	case IO_SEGA_MULTI: {
 		port->device.sega_multi.timeout_cycle = load_int32(buf);
 		port->device.sega_multi.th_counter = load_int16(buf);
 		uint8_t gamepad_type = load_int8(buf);
 		if (port->device.sega_multi.gamepad_type != gamepad_type) {
 			warning("Loaded save state has a different SEGA-MULTI device type from the current configuration");
 		}
+		break;
+	}
+	case IO_EA_MULTI_A: {
+		port->device.ea_multi.timeout_cycle = load_int32(buf);
+		port->device.ea_multi.th_counter = load_int16(buf);
+		uint8_t gamepad_type = load_int8(buf);
+		if (port->device.ea_multi.gamepad_type != gamepad_type) {
+			warning("Loaded save state has a different EA-MULTI device type from the current configuration");
+		}
+		port->device.ea_multi.gamepad_sel = load_int8(buf);
+		break;
+	}
+	case IO_EA_MULTI_B:
+		// Only port A is saved
 		break;
 	}
 }

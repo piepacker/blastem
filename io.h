@@ -63,6 +63,13 @@ typedef struct {
 			uint8_t gamepad_num[4];
 			uint8_t gamepad_type;
 		} sega_multi;
+		struct {
+			uint32_t timeout_cycle;
+			uint16_t th_counter;
+			uint8_t gamepad_num[4];
+			uint8_t gamepad_type;
+			uint8_t gamepad_sel;
+		} ea_multi;
 	} device;
 	uint8_t  output;
 	uint8_t  control;
@@ -114,7 +121,7 @@ enum {
 void setup_io_devices(tern_node * config, rom_info *rom, sega_io *io);
 void io_adjust_cycles(io_port * pad, uint32_t current_cycle, uint32_t deduction);
 void io_control_write(io_port *port, uint8_t value, uint32_t current_cycle);
-void io_data_write(io_port * pad, uint8_t value, uint32_t current_cycle);
+void io_data_write(io_port * pad, uint8_t port_nb, uint8_t value, uint32_t current_cycle);
 uint8_t io_data_read(io_port * pad, uint32_t current_cycle);
 void io_serialize(io_port *port, serialize_buffer *buf);
 void io_deserialize(deserialize_buffer *buf, void *vport);

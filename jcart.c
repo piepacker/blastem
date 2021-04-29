@@ -23,8 +23,8 @@ void *jcart_write_w(uint32_t address, void *context, uint16_t value)
 	m68k_context *m68k= context;
 	io_port *ports = get_ports(m68k);
 	value = value << 6 & 0x40;
-	io_data_write(ports, value, m68k->current_cycle);
-	io_data_write(ports + 1, value, m68k->current_cycle);
+	io_data_write(ports, 0, value, m68k->current_cycle);
+	io_data_write(ports, 1, value, m68k->current_cycle);
 	return context;
 }
 

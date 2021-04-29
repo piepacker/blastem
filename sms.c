@@ -36,8 +36,8 @@ static void *memory_io_write(uint32_t location, void *vcontext, uint8_t value)
 			vdp_run_context(sms->vdp, z80->Z80_CYCLE);
 			vdp_latch_hv(sms->vdp);
 		}
-		io_data_write(sms->io.ports, value << 1, z80->Z80_CYCLE);
-		io_data_write(sms->io.ports + 1, value >> 1, z80->Z80_CYCLE);
+		io_data_write(sms->io.ports, 0, value << 1, z80->Z80_CYCLE);
+		io_data_write(sms->io.ports, 1, value >> 1, z80->Z80_CYCLE);
 	} else {
 		//TODO: memory control write
 	}
