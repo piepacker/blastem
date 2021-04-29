@@ -884,13 +884,13 @@ static m68k_context * io_write(uint32_t location, m68k_context * context, uint8_
 			switch(location >> 1 & 0xFF)
 			{
 			case 0x1:
-				io_data_write(gen->io.ports, value, context->current_cycle);
+				io_data_write(gen->io.ports, 0, value, context->current_cycle);
 				break;
 			case 0x2:
-				io_data_write(gen->io.ports+1, value, context->current_cycle);
+				io_data_write(gen->io.ports, 1, value, context->current_cycle);
 				break;
 			case 0x3:
-				io_data_write(gen->io.ports+2, value, context->current_cycle);
+				io_data_write(gen->io.ports, 2, value, context->current_cycle);
 				break;
 			case 0x4:
 				io_control_write(gen->io.ports, value, context->current_cycle);
