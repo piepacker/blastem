@@ -373,7 +373,7 @@ void process_device(char * device_type, io_port * port)
 			uint8_t gamepad_sep = device_type[segamulti_len+1];
 			uint8_t gamepad_num = device_type[segamulti_len+2] - '0';
 			if ((gamepad_type != '3' && gamepad_type != '6') || gamepad_sep != '.' || gamepad_num > 9) {
-				warning("%s is not a valid sega multi type\n", device_type);
+				fatal_error("%s is not a valid sega multi type\n", device_type);
 			} else {
 				// Same type for all 4 pads with consecutive number
 				switch (gamepad_type) {
