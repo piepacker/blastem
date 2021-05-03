@@ -1685,371 +1685,371 @@ f1affb6e01ca23b67aee9e1c1767f9ec13849823 {\n\
 # NBA Showdown '94 (USA, Europe).md\n\
 3134a3cb63115d2e16e63a76c2708cdaecab83e4 {\n\
 	device_overrides {\n\
-		1 ea_multi_a6\n\
+		1 ea_multi_a3\n\
 		2 ea_multi_b\n\
 	}\n\
 }\n\
 # PGA Tour 96 (USA, Europe).md\n\
 abc2a8d773724cd8fb1aeae483f5ca72f47e77fa {\n\
 	device_overrides {\n\
-		1 ea_multi_a6\n\
+		1 ea_multi_a3\n\
 		2 ea_multi_b\n\
 	}\n\
 }\n\
 # PGA European Tour (USA, Europe).md\n\
 640615be6891a8457d94bb81b0e8e1fa7c5119a8 {\n\
 	device_overrides {\n\
-		1 ea_multi_a6\n\
+		1 ea_multi_a3\n\
 		2 ea_multi_b\n\
 	}\n\
 }\n\
 # FIFA 2003 (Unknown) (Unl) (Pirate).md\n\
 8dc04a0f137323ec95d6c7dfa9cb03fa572bdc51 {\n\
 	device_overrides {\n\
-		1 ea_multi_a6\n\
+		1 ea_multi_a3\n\
 		2 ea_multi_b\n\
 	}\n\
 }\n\
 # IMG International Tour Tennis (USA, Europe).md\n\
 1f1b410d17b39851785dee3eee332fff489db395 {\n\
 	device_overrides {\n\
-		1 ea_multi_a6\n\
+		1 ea_multi_a3\n\
 		2 ea_multi_b\n\
 	}\n\
 }\n\
 # College Football USA 96 (USA).md\n\
 3079bdc5f2d29dcf3798f899a3098736cdc2cd88 {\n\
 	device_overrides {\n\
-		1 ea_multi_a6\n\
+		1 ea_multi_a3\n\
 		2 ea_multi_b\n\
 	}\n\
 }\n\
 # PGA Tour Golf II (Japan).md\n\
 a5896f2f019530929194a6d80828d18b859b9174 {\n\
 	device_overrides {\n\
-		1 ea_multi_a6\n\
+		1 ea_multi_a3\n\
 		2 ea_multi_b\n\
 	}\n\
 }\n\
 # NBA Live 97 (USA, Europe).md\n\
 1671451ab4ab6991e13db70671054c0f2c652a95 {\n\
 	device_overrides {\n\
-		1 ea_multi_a6\n\
+		1 ea_multi_a3\n\
 		2 ea_multi_b\n\
 	}\n\
 }\n\
 # John Madden Football '93 (USA, Europe).md\n\
 59d2352ecb31bc1305128a9d8df894a3bfd684cf {\n\
 	device_overrides {\n\
-		1 ea_multi_a6\n\
+		1 ea_multi_a3\n\
 		2 ea_multi_b\n\
 	}\n\
 }\n\
 # NHL 98 (USA).md\n\
 6771e9b660bde010cf28656cafb70f69249a3591 {\n\
 	device_overrides {\n\
-		1 ea_multi_a6\n\
+		1 ea_multi_a3\n\
 		2 ea_multi_b\n\
 	}\n\
 }\n\
 # FIFA Soccer 95 (USA, Europe) (En,Fr,De,Es).md\n\
 586f9d0f218cf6bb3388a8610b44b6ebb9538fb5 {\n\
 	device_overrides {\n\
-		1 ea_multi_a6\n\
+		1 ea_multi_a3\n\
 		2 ea_multi_b\n\
 	}\n\
 }\n\
 # NHL 97 (USA, Europe).md\n\
 8a90d7921ab8380c0abb0b5515a6b9f96ca6023c {\n\
 	device_overrides {\n\
-		1 ea_multi_a6\n\
+		1 ea_multi_a3\n\
 		2 ea_multi_b\n\
 	}\n\
 }\n\
 # NBA Live 95 (USA, Europe).md\n\
 f86bc9601751ac94119ab2f3ecce2029d5678f01 {\n\
 	device_overrides {\n\
-		1 ea_multi_a6\n\
+		1 ea_multi_a3\n\
 		2 ea_multi_b\n\
 	}\n\
 }\n\
 # Australian Rugby League (Europe).md\n\
 b54754180f22d52fc56bab3aeb7a1edd64c13fef {\n\
 	device_overrides {\n\
-		1 ea_multi_a6\n\
+		1 ea_multi_a3\n\
 		2 ea_multi_b\n\
 	}\n\
 }\n\
 # John Madden Football - Pro Football (Japan).md\n\
 c4cf3681d86861a823fa3e7ffe0cd451fbafcee6 {\n\
 	device_overrides {\n\
-		1 ea_multi_a6\n\
+		1 ea_multi_a3\n\
 		2 ea_multi_b\n\
 	}\n\
 }\n\
 # FIFA Soccer 2000 (Russia) (En,Fr,De,Es,It,Sv) (Unl) (Pirate).md\n\
 ed29312dbd9574514c06e5701e24c6474ed84898 {\n\
 	device_overrides {\n\
-		1 ea_multi_a6\n\
+		1 ea_multi_a3\n\
 		2 ea_multi_b\n\
 	}\n\
 }\n\
 # Madden NFL 95 (USA, Europe).md\n\
 41cde6211da87a8e61e2ffd42cef5de588f9b9fc {\n\
 	device_overrides {\n\
-		1 ea_multi_a6\n\
+		1 ea_multi_a3\n\
 		2 ea_multi_b\n\
 	}\n\
 }\n\
 # Madden NFL 97 (USA, Europe).md\n\
 63544d2a0230be102f2558c03a74855fc712b865 {\n\
 	device_overrides {\n\
-		1 ea_multi_a6\n\
+		1 ea_multi_a3\n\
 		2 ea_multi_b\n\
 	}\n\
 }\n\
 # NBA Live 96 (USA, Europe).md\n\
 5fca106c839d3dea11cbf6842d1d7650db06ca72 {\n\
 	device_overrides {\n\
-		1 ea_multi_a6\n\
+		1 ea_multi_a3\n\
 		2 ea_multi_b\n\
 	}\n\
 }\n\
 # Triple Play 96 (USA).md\n\
 bf967bba7ce2cdf1c8b536cf7e681795b51b08a2 {\n\
 	device_overrides {\n\
-		1 ea_multi_a6\n\
+		1 ea_multi_a3\n\
 		2 ea_multi_b\n\
 	}\n\
 }\n\
 # NBA Live 98 (USA).md\n\
 89b98867c7393371a364de58ba6955e0798fa10f {\n\
 	device_overrides {\n\
-		1 ea_multi_a6\n\
+		1 ea_multi_a3\n\
 		2 ea_multi_b\n\
 	}\n\
 }\n\
 # John Madden Football '92 (USA, Europe).md\n\
 1a4c1dcc2de5018142a770f753ff42667b83e5be {\n\
 	device_overrides {\n\
-		1 ea_multi_a6\n\
+		1 ea_multi_a3\n\
 		2 ea_multi_b\n\
 	}\n\
 }\n\
 # College Football USA 96 (USA) (Beta) (1995-06-21).md\n\
 5438ba1baa3400c73905e25fdfe9d504c3604d5a {\n\
 	device_overrides {\n\
-		1 ea_multi_a6\n\
+		1 ea_multi_a3\n\
 		2 ea_multi_b\n\
 	}\n\
 }\n\
 # Bill Walsh College Football (USA, Europe).md\n\
 2bbb454900ac99172a2d72d1e6f96a96b8d6840b {\n\
 	device_overrides {\n\
-		1 ea_multi_a6\n\
+		1 ea_multi_a3\n\
 		2 ea_multi_b\n\
 	}\n\
 }\n\
 # Rugby World Cup 95 (USA, Europe) (En,Fr,It).md\n\
 9b435c82b612e23cb512efaebf4d35b203339e44 {\n\
 	device_overrides {\n\
-		1 ea_multi_a6\n\
+		1 ea_multi_a3\n\
 		2 ea_multi_b\n\
 	}\n\
 }\n\
 # NBA Live 95 (Korea).md\n\
 115c2e8cfa6bc45767ba47efc00aede424a6de66 {\n\
 	device_overrides {\n\
-		1 ea_multi_a6\n\
+		1 ea_multi_a3\n\
 		2 ea_multi_b\n\
 	}\n\
 }\n\
 # FIFA Soccer 96 (USA, Europe) (En,Fr,De,Es,It,Sv).md\n\
 a7fcfe478b368d7d33bcbca65245f5faed9a1e07 {\n\
 	device_overrides {\n\
-		1 ea_multi_a6\n\
+		1 ea_multi_a3\n\
 		2 ea_multi_b\n\
 	}\n\
 }\n\
 # Triple Play - Gold Edition (USA).md\n\
 791afd91483a332ec5ca3384ee791252767f2f67 {\n\
 	device_overrides {\n\
-		1 ea_multi_a6\n\
+		1 ea_multi_a3\n\
 		2 ea_multi_b\n\
 	}\n\
 }\n\
 # PGA Tour Golf (USA, Europe) (PGA07).md\n\
 73935bfbdf63d3400284a16e464286b7630964aa {\n\
 	device_overrides {\n\
-		1 ea_multi_a6\n\
+		1 ea_multi_a3\n\
 		2 ea_multi_b\n\
 	}\n\
 }\n\
 # John Madden Football (USA, Europe) (1990-11-07) (Sega Channel).md\n\
 4a8fca0212497d446f6a5f829dc5748ed1456b87 {\n\
 	device_overrides {\n\
-		1 ea_multi_a6\n\
+		1 ea_multi_a3\n\
 		2 ea_multi_b\n\
 	}\n\
 }\n\
 # Madden NFL '94 (USA, Europe).md\n\
 856d68d3e8589df3452096434feef823684d11eb {\n\
 	device_overrides {\n\
-		1 ea_multi_a6\n\
+		1 ea_multi_a3\n\
 		2 ea_multi_b\n\
 	}\n\
 }\n\
 # PGA Tour Golf (USA, Europe) (PGA09).md\n\
 1b173a1b674a6d5bdcd539c4fe8fe984586c3a8a {\n\
 	device_overrides {\n\
-		1 ea_multi_a6\n\
+		1 ea_multi_a3\n\
 		2 ea_multi_b\n\
 	}\n\
 }\n\
 # FIFA 98 - Road to World Cup (Europe) (En,Fr,Es,It,Sv).md\n\
 6613f13da5494aaaba3222ed5e730ec9ce3c09a7 {\n\
 	device_overrides {\n\
-		1 ea_multi_a6\n\
+		1 ea_multi_a3\n\
 		2 ea_multi_b\n\
 	}\n\
 }\n\
 # Elitserien 96 (Sweden).md\n\
 085fb8e6f0d2ff0f399de5c57eb13d9c9325dbae {\n\
 	device_overrides {\n\
-		1 ea_multi_a6\n\
+		1 ea_multi_a3\n\
 		2 ea_multi_b\n\
 	}\n\
 }\n\
 # FIFA International Soccer (USA, Europe) (En,Fr,De,Es).md\n\
 1cbef8c4541311b84d7388365d12a93a1f712dc4 {\n\
 	device_overrides {\n\
-		1 ea_multi_a6\n\
+		1 ea_multi_a3\n\
 		2 ea_multi_b\n\
 	}\n\
 }\n\
 # John Madden Football - Championship Edition (USA).md\n\
 417acacb9f9ef90d08b3cfb81972a9d8b56f4293 {\n\
 	device_overrides {\n\
-		1 ea_multi_a6\n\
+		1 ea_multi_a3\n\
 		2 ea_multi_b\n\
 	}\n\
 }\n\
 # NHL 96 (USA, Europe).md\n\
 7204633fbb9966ac637e7966d02ba15c5acdee6b {\n\
 	device_overrides {\n\
-		1 ea_multi_a6\n\
+		1 ea_multi_a3\n\
 		2 ea_multi_b\n\
 	}\n\
 }\n\
 # Elitserien 95 (Sweden).md\n\
 5f2c8303099ce13fe1e5760b7ef598a2967bfa8d {\n\
 	device_overrides {\n\
-		1 ea_multi_a6\n\
+		1 ea_multi_a3\n\
 		2 ea_multi_b\n\
 	}\n\
 }\n\
 # College Football USA 97 (USA).md\n\
 9b93035ecdc2b6f0815281764ef647f2de039e7b {\n\
 	device_overrides {\n\
-		1 ea_multi_a6\n\
+		1 ea_multi_a3\n\
 		2 ea_multi_b\n\
 	}\n\
 }\n\
 # FIFA Soccer 95 (Korea) (En,Fr,De,Es).md\n\
 ad1202a2e4166f8266d5633b8c5beb59c6cbd005 {\n\
 	device_overrides {\n\
-		1 ea_multi_a6\n\
+		1 ea_multi_a3\n\
 		2 ea_multi_b\n\
 	}\n\
 }\n\
 # PGA Tour Golf III (USA, Europe).md\n\
 702707efcbfe229f6e190f2b6c71b6f53ae9ec36 {\n\
 	device_overrides {\n\
-		1 ea_multi_a6\n\
+		1 ea_multi_a3\n\
 		2 ea_multi_b\n\
 	}\n\
 }\n\
 # John Madden Football (USA, Europe).md\n\
 10682f1763711b281542fcd5e192e1633809dc75 {\n\
 	device_overrides {\n\
-		1 ea_multi_a6\n\
+		1 ea_multi_a3\n\
 		2 ea_multi_b\n\
 	}\n\
 }\n\
 # PGA Tour Golf II (USA, Europe) (Rev A).md\n\
 12d5236a4ff23c5b1e4f452b3abd3d48e6e55314 {\n\
 	device_overrides {\n\
-		1 ea_multi_a6\n\
+		1 ea_multi_a3\n\
 		2 ea_multi_b\n\
 	}\n\
 }\n\
 # Bill Walsh College Football 95 (USA).md\n\
 2ae000f45474b3cdedd08eeca7f5e195959ba689 {\n\
 	device_overrides {\n\
-		1 ea_multi_a6\n\
+		1 ea_multi_a3\n\
 		2 ea_multi_b\n\
 	}\n\
 }\n\
 # Madden NFL 96 (USA, Europe).md\n\
 35a4241eed51f10de2e63c843f162ce5d92c70a2 {\n\
 	device_overrides {\n\
-		1 ea_multi_a6\n\
+		1 ea_multi_a3\n\
 		2 ea_multi_b\n\
 	}\n\
 }\n\
 # NHL 95 (USA, Europe).md\n\
 09e87b076aa4cd6f057a1d65bb50fd889b509b44 {\n\
 	device_overrides {\n\
-		1 ea_multi_a6\n\
+		1 ea_multi_a3\n\
 		2 ea_multi_b\n\
 	}\n\
 }\n\
 # Coach K College Basketball (USA).md\n\
 8ff5d7a7fcc47f030a3ea69f4534d9c892f58ce2 {\n\
 	device_overrides {\n\
-		1 ea_multi_a6\n\
+		1 ea_multi_a3\n\
 		2 ea_multi_b\n\
 	}\n\
 }\n\
 # Madden NFL 98 (USA).md\n\
 761e0903798a8d0ad9e7ab72e6d2762fc9d366d2 {\n\
 	device_overrides {\n\
-		1 ea_multi_a6\n\
+		1 ea_multi_a3\n\
 		2 ea_multi_b\n\
 	}\n\
 }\n\
 # FIFA Soccer 97 (USA, Europe) (En,Fr,De,Es,It,Sv).md\n\
 2d91cb1c50586723f877cb25a37b5ebcd70d8bcc {\n\
 	device_overrides {\n\
-		1 ea_multi_a6\n\
+		1 ea_multi_a3\n\
 		2 ea_multi_b\n\
 	}\n\
 }\n\
 # FIFA International Soccer (Japan) (En,Ja).md\n\
 3464e97d14f4ddae6b15e1246d25e68d063861fc {\n\
 	device_overrides {\n\
-		1 ea_multi_a6\n\
+		1 ea_multi_a3\n\
 		2 ea_multi_b\n\
 	}\n\
 }\n\
 # FIFA Soccer 99 (Unknown) (Unl) (Pirate).md\n\
 2c8c1dc0aaa711e3ab3fe0d74b79184f33127350 {\n\
 	device_overrides {\n\
-		1 ea_multi_a6\n\
+		1 ea_multi_a3\n\
 		2 ea_multi_b\n\
 	}\n\
 }\n\
 # PGA Tour Golf II (USA, Europe).md\n\
 cab753b958b336dab731407bd46429de16c6919f {\n\
 	device_overrides {\n\
-		1 ea_multi_a6\n\
+		1 ea_multi_a3\n\
 		2 ea_multi_b\n\
 	}\n\
 }\n\
 # Australian Rugby League (Europe) (Beta).md\n\
 bb84be50eb4d31dbe601058bf9ea1adaaec1a1b1 {\n\
 	device_overrides {\n\
-		1 ea_multi_a6\n\
+		1 ea_multi_a3\n\
 		2 ea_multi_b\n\
 	}\n\
 }\n\
