@@ -62,6 +62,10 @@ uint32_t refresh_counter = 0;
 
 void genesis_serialize(genesis_context *gen, serialize_buffer *buf, uint32_t m68k_pc, uint8_t all)
 {
+	start_section(buf, SECTION_METADATA);
+	save_int32(buf, SAVESTATE_VERSION);
+	end_section(buf);
+
 	if (all) {
 		start_section(buf, SECTION_68000);
 		m68k_serialize(gen->m68k, m68k_pc, buf);
@@ -220,6 +224,10 @@ static void top_deserialize(deserialize_buffer *buf, void* nop)
 #endif
 }
 
+static void metadata_deserialize(deserialize_buffer *buf, void *nop) {
+	buf->version = load_int32(buf);
+}
+
 static void adjust_int_cycle(m68k_context * context, vdp_context * v_context);
 static void check_tmss_lock(genesis_context *gen);
 static void toggle_tmss_rom(genesis_context *gen);
@@ -238,6 +246,7 @@ void genesis_deserialize(deserialize_buffer *buf, genesis_context *gen)
 	register_section_handler(buf, (section_handler){.fun = zram_deserialize, .data = gen}, SECTION_SOUND_RAM);
 	register_section_handler(buf, (section_handler){.fun = cart_deserialize, .data = gen}, SECTION_MAPPER);
 	register_section_handler(buf, (section_handler){.fun = top_deserialize, .data = gen}, SECTION_TOP);
+	register_section_handler(buf, (section_handler){.fun = metadata_deserialize, .data = gen}, SECTION_METADATA);
 	register_section_handler(buf, (section_handler){.fun = tmss_deserialize, .data = gen}, SECTION_TMSS);
 	uint8_t tmss_old = gen->tmss;
 	gen->tmss = 0xFF;
