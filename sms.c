@@ -213,6 +213,10 @@ static void set_speed_percent(system_header * system, uint32_t percent)
 
 void sms_serialize(sms_context *sms, serialize_buffer *buf)
 {
+	start_section(buf, SECTION_METADATA);
+	save_int32(buf, SAVESTATE_VERSION);
+	end_section(buf);
+
 	start_section(buf, SECTION_Z80);
 	z80_serialize(sms->z80, buf);
 	end_section(buf);
@@ -299,6 +303,10 @@ static void mapper_deserialize(deserialize_buffer *buf, void *vsms)
 	}
 }
 
+static void metadata_deserialize(deserialize_buffer *buf, void *nop) {
+	buf->version = load_int32(buf);
+}
+
 void sms_deserialize(deserialize_buffer *buf, sms_context *sms)
 {
 	register_section_handler(buf, (section_handler){.fun = z80_deserialize, .data = sms->z80}, SECTION_Z80);
@@ -309,6 +317,7 @@ void sms_deserialize(deserialize_buffer *buf, sms_context *sms)
 	register_section_handler(buf, (section_handler){.fun = ram_deserialize, .data = sms}, SECTION_MAIN_RAM);
 	register_section_handler(buf, (section_handler){.fun = mapper_deserialize, .data = sms}, SECTION_MAPPER);
 	register_section_handler(buf, (section_handler){.fun = cart_ram_deserialize, .data = sms}, SECTION_CART_RAM);
+	register_section_handler(buf, (section_handler){.fun = metadata_deserialize, .data = sms}, SECTION_METADATA);
 	//TODO: cart RAM
 	while (buf->cur_pos < buf->size)
 	{

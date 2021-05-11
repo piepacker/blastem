@@ -131,6 +131,7 @@ void init_deserialize(deserialize_buffer *buf, uint8_t *data, size_t size)
 	buf->data = data;
 	buf->handlers = NULL;
 	buf->max_handler = 8;
+	buf->version = 0;
 }
 
 uint32_t load_int32(deserialize_buffer *buf)

@@ -7,6 +7,7 @@
 #ifndef SERIALIZE_DEFAULT_SIZE
 #define SERIALIZE_DEFAULT_SIZE (150*1024) //default to enough for a Genesis save state
 #endif
+#define SAVESTATE_VERSION 1
 
 typedef struct {
 	size_t  size;
@@ -29,6 +30,7 @@ struct deserialize_buffer {
 	uint8_t         *data;
 	section_handler *handlers;
 	uint16_t        max_handler;
+	uint32_t        version;
 };
 
 enum {
@@ -48,6 +50,7 @@ enum {
 	SECTION_EEPROM,
 	SECTION_CART_RAM,
 	SECTION_TOP,
+	SECTION_METADATA,
 };
 
 void init_serialize(serialize_buffer *buf);
