@@ -121,7 +121,9 @@ uint8_t read_byte(uint32_t address, void **mem_pointers, cpu_options *opts, void
 void write_byte(uint32_t address, uint8_t value, void **mem_pointers, cpu_options *opts, void *context);
 memmap_chunk const *find_map_chunk(uint32_t address, cpu_options *opts, uint16_t flags, uint32_t *size_sum);
 uint32_t chunk_size(cpu_options *opts, memmap_chunk const *chunk);
+#ifndef NEW_CORE
 uint32_t ram_size(cpu_options *opts);
+#endif
 
 #endif //BACKEND_H_
 
