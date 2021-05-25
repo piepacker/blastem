@@ -79,8 +79,9 @@ typedef struct {
 		struct {
 			uint32_t timeout_cycle;
 			uint16_t th_counter;
+			uint8_t TH_COUNTER_START[4];
 			uint8_t gamepad_num[4];
-			uint8_t gamepad_type;
+			uint8_t gamepad_type[4];
 		} sega_multi;
 		struct {
 			uint32_t timeout_cycle;

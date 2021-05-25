@@ -369,22 +369,38 @@ void process_device(char * device_type, io_port * port)
 			port->device.stream.data_fd = -1;
 			port->device.stream.listen_fd = -1;
 			const int segamulti_len = strlen("sega_multi");
-			uint8_t gamepad_type = device_type[segamulti_len];
-			uint8_t gamepad_sep = device_type[segamulti_len+1];
-			uint8_t gamepad_num = device_type[segamulti_len+2] - '0';
-			if ((gamepad_type != '3' && gamepad_type != '6') || gamepad_sep != '.' || gamepad_num > 9) {
+			uint8_t gamepad_sep = device_type[segamulti_len+4];
+			uint8_t gamepad_num = device_type[segamulti_len+5] - '0';
+			if (gamepad_sep != '.' || gamepad_num > 9) {
 				fatal_error("%s is not a valid sega multi type\n", device_type);
-			} else {
-				// Same type for all 4 pads with consecutive number
+			}
+			uint8_t th_start = 0;
+			port->device.sega_multi.TH_COUNTER_START[0] = th_start;
+			for (int i = 0; i < 4; i++) {
+				uint8_t gamepad_type = device_type[segamulti_len + i];
 				switch (gamepad_type) {
-					case '3': port->device.sega_multi.gamepad_type = IO_GAMEPAD3; break;
-					case '6': port->device.sega_multi.gamepad_type = IO_GAMEPAD6; break;
-					default:  port->device.sega_multi.gamepad_type = IO_NONE; break;
+					case '3':
+						port->device.sega_multi.gamepad_type[i] = IO_GAMEPAD3;
+						th_start += 2;
+						break;
+					case '6':
+						port->device.sega_multi.gamepad_type[i] = IO_GAMEPAD6;
+						th_start += 3;
+						break;
+					case 'M':
+						port->device.sega_multi.gamepad_type[i] = IO_MOUSE;
+						th_start += 6;
+						break;
+					default:
+						port->device.sega_multi.gamepad_type[i] = IO_NONE;
+						th_start += 0;
+						break;
 				}
-				for (int i = 0; i < 4; i++) {
-					port->device.sega_multi.gamepad_num[i] = gamepad_num;
-					gamepad_num++;
+				if (i < 3) {
+					port->device.sega_multi.TH_COUNTER_START[i+1] = th_start;
 				}
+				port->device.sega_multi.gamepad_num[i] = gamepad_num;
+				gamepad_num++;
 			}
 		}
 	} else if(!strcmp(device_type, "sega_parallel")) {
@@ -1644,42 +1660,42 @@ uint8_t io_data_read(io_port * port, uint32_t current_cycle)
 			case 3:
 			case 4:
 			case 5:
-			case 6:
+			case 6: {
+					int slot = th_counter - 3;
 					// Pad id
-					switch (port->device.sega_multi.gamepad_type) {
+					switch (port->device.sega_multi.gamepad_type[slot]) {
 						case IO_GAMEPAD3: input |= 0;   break;
 						case IO_GAMEPAD6: input |= 1;   break;
 						case IO_MOUSE:	  input |= 2;   break;
 						default:		  input |= 0xF; break; // unconnected
 					}
 					break;
+			}
 			default: {
-					int slot = 0;
-					int pad_th_counter = 0;
-					int th_ref = th_counter - 7;
-					switch (port->device.sega_multi.gamepad_type) {
-						case IO_GAMEPAD3:
-							// 2 nibbles for 3 buttons
-							slot = th_ref / 2;
-							pad_th_counter = th_ref - slot * 2;
-							input |= ~(port->input4[slot][pad_th_counter]) & 0xF;
+					int pad_th_counter = th_counter - 7;
+					int slot = 3;
+					for (int i = 0; i < 3; i++) {
+						if (pad_th_counter >= port->device.sega_multi.TH_COUNTER_START[i] &&
+								pad_th_counter < port->device.sega_multi.TH_COUNTER_START[i+1]) {
+							slot = i;
 							break;
+						}
+					}
+					pad_th_counter -= port->device.sega_multi.TH_COUNTER_START[slot];
+					switch (port->device.sega_multi.gamepad_type[slot]) {
+						case IO_GAMEPAD3:
 						case IO_GAMEPAD6:
-							// 3 nibbles for 6 buttons
-							slot = th_ref / 3;
-							pad_th_counter = th_ref - slot * 3;
 							input |= ~(port->input4[slot][pad_th_counter]) & 0xF;
 							break;
 						case IO_MOUSE:
 							// 6 nibbles for mouse
 							fatal_error("IO_MOUSE isn't supported with multitap");
 						default:
-							// 0? nibble for unconnected
 							break;
 					}
 
 					break;
-					}
+			}
 		}
 		device_driven = 0x1F;
 		break;
@@ -1814,7 +1830,6 @@ void io_serialize(io_port *port, serialize_buffer *buf)
 	case IO_SEGA_MULTI:
 		save_int32(buf, port->device.sega_multi.timeout_cycle);
 		save_int16(buf, port->device.sega_multi.th_counter);
-		save_int8(buf, port->device.sega_multi.gamepad_type);
 		break;
 	case IO_EA_MULTI_A:
 		save_int32(buf, port->device.ea_multi.timeout_cycle);
@@ -1882,10 +1897,6 @@ void io_deserialize(deserialize_buffer *buf, void *vport)
 	case IO_SEGA_MULTI: {
 		port->device.sega_multi.timeout_cycle = load_int32(buf);
 		port->device.sega_multi.th_counter = load_int16(buf);
-		uint8_t gamepad_type = load_int8(buf);
-		if (port->device.sega_multi.gamepad_type != gamepad_type) {
-			warning("Loaded save state has a different SEGA-MULTI device type from the current configuration");
-		}
 		break;
 	}
 	case IO_EA_MULTI_A: {
