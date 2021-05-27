@@ -82,6 +82,10 @@ system_media media;
 RETRO_API void retro_init(void)
 {
 	render_audio_initialized(RENDER_AUDIO_S16, 53693175 / (7 * 6 * 4), 2, 4, sizeof(int16_t));
+#ifndef ENABLE_DEBUG_MSG
+	// Disable debug message to hide BYOG context
+	disable_stdout_messages();
+#endif
 }
 
 RETRO_API void retro_deinit(void)

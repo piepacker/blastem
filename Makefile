@@ -129,7 +129,7 @@ endif #Windows
 
 ifndef OPT
 ifdef DEBUG
-OPT:=-g3 -O0
+OPT:=-g3 -O0 -DENABLE_DEBUG_MSG
 else
 ifdef NOLTO
 OPT:=-O2
